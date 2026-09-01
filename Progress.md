@@ -53,7 +53,21 @@ tomaron (para que quede como referencia de aprendizaje, no solo como changelog).
 ## Sprint 1 — Autenticación y arquitectura base
 
 ### HU-21 — Modelo de datos base
-**Estado:** ⬜ No iniciado
+
+**Estado:** ✅ Implementado (parcial) — modelos `User`, `Entrenador`, `Cliente` migrados
+contra Supabase. Faltan Valoraciones, Entrenamientos, Nutrición, Notificaciones.
+
+**Decisión agregada (no estaba en el diseño original):** soft deletes obligatorios en
+todo el sistema — cada modelo tendrá `deletedAt DateTime?`, las relaciones usan
+`onDelete: Restrict` en vez de `Cascade`. Documentado como regla en `CLAUDE.md`.
+
+**Deuda técnica conocida:** los `@unique` (`email`, `supabaseUserId`) no excluyen
+filas con soft delete — un email "borrado" sigue bloqueando su reutilización. Se
+resolvería con un índice único parcial (`WHERE deletedAt IS NULL`), no soportado
+nativamente en el schema de Prisma; requeriría editar el SQL de la migración a mano.
+No se resuelve en el MVP.
+
+**Migración aplicada:** `20260901035441_init_user_entrenador_cliente`
 
 ### HU-22 — Sincronización de usuarios con Supabase Auth
 **Estado:** ⬜ No iniciado

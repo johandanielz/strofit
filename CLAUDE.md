@@ -82,6 +82,11 @@ actual por hojas de Excel compartidas por WhatsApp.
 - **Video de ejercicios:** embebido desde YouTube; limitación conocida y aceptada
   para el MVP que requiere conexión a internet (documentada en `1.4.1.
   Restricciones` del documento fuente).
+- **Soft deletes obligatorio:** ningún registro se borra físicamente de la base de
+  datos. Todo modelo tiene un campo `deletedAt DateTime?` (nulo = activo). "Eliminar"
+  es un `UPDATE` que llena ese campo, nunca un `DELETE`. Las relaciones usan
+  `onDelete: Restrict` como red de seguridad, no `Cascade`. Toda consulta de lectura
+  en los repositorios debe filtrar `deletedAt: null` por defecto.
 
 ## Lineamientos de pruebas y calidad
 

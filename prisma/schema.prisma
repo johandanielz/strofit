@@ -4,11 +4,58 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Rol {
+  ENTRENADOR
+  CLIENTE
+}
+
+// --- HU-22: sincronización de usuarios con Supabase Auth ---
+model User {
+  id             String    @id @default(uuid())
+  supabaseUserId String    @unique
+  email          String    @unique
+  nombre         String
+  telefono       String?
+  rol            Rol
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  clienteProfile    Cliente?    @relation("ClienteUser")
+  entrenadorProfile Entrenador? @relation("EntrenadorUser")
+
+  @@index([rol])
+  @@index([deletedAt])
+}
+
+model Entrenador {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation("EntrenadorUser", fields: [userId], references: [id], onDelete: Restrict)
+  deletedAt DateTime?
+
+  clientes Cliente[]
+
+  @@index([deletedAt])
+}
+
+model Cliente {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation("ClienteUser", fields: [userId], references: [id], onDelete: Restrict)
+  entrenadorId String
+  entrenador   Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
+  deletedAt    DateTime?
+
+  @@index([entrenadorId])
+  @@index([deletedAt])
 }
