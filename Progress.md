@@ -93,3 +93,15 @@ criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden
 - **Sprint 3 — Entrenamiento:** HU-10, HU-11, HU-12, HU-13.
 - **Sprint 4 — Nutrición:** HU-14, HU-15, HU-16.
 - **Sprint 5 — Notificaciones:** HU-17, HU-18, HU-19, HU-20.
+
+## Próxima sesión
+
+**Último commit:** `9efeac6` — HU-21 (modelos User, Entrenador, Cliente migrados con soft deletes)
+
+**Siguiente paso:** HU-22 — sincronización de usuarios con Supabase Auth.
+- Escribir el primer `PrismaClient` real de la app (con el driver adapter `@prisma/adapter-pg`
+  que ya instalamos), probablemente en `src/lib/db.ts`.
+- Implementar `syncSupabaseUser` (ya diseñado conceptualmente en la sesión anterior) contra
+  el `User` real de Supabase, no contra un repositorio en memoria.
+- Escribir las pruebas unitarias correspondientes a los criterios de aceptación de HU-22.
+- Después de esto, seguir con Valoraciones (HU-04 a HU-09).
