@@ -101,6 +101,12 @@ operar sin un `User` asociado en nuestra base de datos.
 5. Given que un usuario de Supabase Auth no tiene rol definido en sus metadatos, When
    se intenta sincronizar, Then el sistema rechaza la sincronización (`ROL_INDEFINIDO`)
    y no crea el registro.
+6. Given que un usuario tiene un registro `User` con `deletedAt` no nulo (fue dado
+   de baja explícitamente), When intenta sincronizarse de nuevo (inicia sesión con
+   el mismo `supabaseUserId`), Then el sistema lo reconoce pero **no reactiva la
+   cuenta automáticamente** — devuelve un estado que indica cuenta desactivada, sin
+   otorgar acceso a datos de negocio. La reactivación requiere una acción explícita
+   (fuera del alcance de HU-22; queda como HU futura si se necesita).
 
 **Estado:** ⬜ No iniciado.
 
@@ -109,6 +115,15 @@ operar sin un `User` asociado en nuestra base de datos.
 ## HU-01 — Login del entrenador
 
 **Como** entrenador, **quiero** iniciar sesión **para** ingresar a la plataforma.
+
+> **Nota de arquitectura (agregada al integrar HU-22):** el diseño de `AuthService`
+> de la sesión de exploración inicial asumía que la aplicación maneja contraseñas
+> directamente (`PasswordHasher`, hash propio). Como el proyecto sí usa Supabase Auth
+> como proveedor de identidad real, **ese diseño no se reutiliza tal cual**. El flujo
+> correcto es: Supabase Auth valida email/contraseña → se llama a `syncSupabaseUser`
+> (HU-22) para reflejar esa identidad en nuestra tabla `User` → se usa `User.rol`
+> para decidir el redirect. `AuthService` se rediseñará cuando implementemos HU-01/02,
+> ya sin `PasswordHasher` — esa responsabilidad es 100% de Supabase Auth.
 
 **Criterios de aceptación:** (sin cambios respecto al documento principal)
 1. Credenciales correctas → autentica y redirige al dashboard del entrenador.
@@ -126,6 +141,15 @@ buen punto para discutir cuando lo implementemos.
 ## HU-02 — Registro de cliente
 
 **Como** cliente, **quiero** registrarme **para** después poder iniciar sesión.
+
+> **Nota de arquitectura (agregada al integrar HU-22):** el diseño de `AuthService`
+> de la sesión de exploración inicial asumía que la aplicación maneja contraseñas
+> directamente (`PasswordHasher`, hash propio). Como el proyecto sí usa Supabase Auth
+> como proveedor de identidad real, **ese diseño no se reutiliza tal cual**. El flujo
+> correcto es: Supabase Auth valida email/contraseña → se llama a `syncSupabaseUser`
+> (HU-22) para reflejar esa identidad en nuestra tabla `User` → se usa `User.rol`
+> para decidir el redirect. `AuthService` se rediseñará cuando implementemos HU-01/02,
+> ya sin `PasswordHasher` — esa responsabilidad es 100% de Supabase Auth.
 
 **Criterios de aceptación:** (sin cambios respecto al documento principal)
 1. Datos válidos → crea la cuenta con rol Cliente, redirige a login, sin verificación
