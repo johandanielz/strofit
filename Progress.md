@@ -70,7 +70,33 @@ No se resuelve en el MVP.
 **Migración aplicada:** `20260901035441_init_user_entrenador_cliente`
 
 ### HU-22 — Sincronización de usuarios con Supabase Auth
-**Estado:** ⬜ No iniciado
+
+**Estado:** ✅ Completado — implementado y verificado contra Supabase real (no solo
+pruebas unitarias con repositorio falso).
+
+**Archivos:**
+- `src/lib/auth/syncUser.ts` — lógica de negocio (Repository pattern)
+- `src/lib/auth/prismaUserSyncRepository.ts` — implementación real con Prisma
+- `tests/user-sync.test.ts` — 5/5 pruebas unitarias
+
+**Pruebas:** 5/5 ✅ — criterios 1, 2, 3, 5 y 6 (nuevo) cubiertos explícitamente.
+Criterio 4 (fallo no permite continuar) cubierto por diseño, no por prueba explícita.
+
+**Decisión de negocio agregada hoy (criterio 6, no estaba en el diseño original):**
+una cuenta con `deletedAt` no nulo se reconoce pero **no se reactiva
+automáticamente** al volver a iniciar sesión — devuelve `CUENTA_DESACTIVADA`. La
+reactivación requeriría una acción explícita del entrenador (fuera de alcance de
+HU-22).
+
+**Verificación manual contra Supabase real:**
+- ✅ Creación de usuario nuevo — confirmado en Table Editor.
+- ✅ Detección de cuenta desactivada — confirmado editando `deletedAt` manualmente
+  en Supabase y re-corriendo la sincronización.
+
+**Nota de arquitectura importante:** HU-22 confirma que `User` (nuestra tabla) nunca
+almacena contraseñas — esa responsabilidad es 100% de Supabase Auth. Esto implica que
+el diseño de `AuthService` de la sesión de exploración inicial (con `PasswordHasher`)
+no se reutiliza tal cual para HU-01/HU-02; se rediseñará cuando las implementemos.
 
 ### HU-01 — Login del entrenador
 **Estado:** ⬜ No iniciado
