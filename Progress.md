@@ -12,7 +12,7 @@
 
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
-| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 0/5 | — | — |
+| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 2/5 | 5/5 ✅ | — |
 | 2      | Valoraciones físicas            | 6 | 0/6 | — | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
@@ -28,21 +28,21 @@ paso de la sesión de implementación.
 Orden sugerido, de menor a mayor dependencia — cada paso se marca aquí como
 `Hecho`/`Pendiente` a medida que avanzamos:
 
-1. ⬜ **Setup del proyecto** — `create-next-app` (Next.js 16.3 + TypeScript + Tailwind),
+1. ✅ **Setup del proyecto** — `create-next-app` (Next.js 16.3 + TypeScript + Tailwind),
    estructura de carpetas (`src/lib`, `src/app`, `prisma/`).
-2. ⬜ **Proyecto de Supabase** — crear el proyecto, obtener `DATABASE_URL` y las llaves
-   de Auth, variables de entorno en `.env.local` (nunca committeadas).
-3. ⬜ **HU-21 — Prisma schema** — definir el modelo de datos completo y correr
+2. ✅ **Proyecto de Supabase** — crear el proyecto, obtener `DATABASE_URL` y las llaves
+   de Auth, variables de entorno en `.env` (nunca committeadas).
+3. ✅ **HU-21 — Prisma schema** — definir el modelo de datos completo y correr
    `npx prisma migrate dev` contra el Supabase real (esta vez sí, con base de datos
-   viva, no solo el archivo declarativo).
+   viva, no solo el archivo declarativo). Migrado contra Supabase real, con soft deletes.
 4. ⬜ **Docker + docker-compose** — entorno de desarrollo local reproducible.
-5. ⬜ **Jest configurado** — mismo setup que ya validamos ayer (ts-jest), pero dentro
-   del proyecto Next.js real.
-6. ⬜ **HU-22 — sincronización con Supabase Auth** — implementar y probar antes que
-   login/registro, porque HU-01/02/03 dependen de que exista un `User` sincronizado.
+5. ✅ **Jest configurado** — mismo setup que ya validamos ayer (ts-jest), pero dentro
+   del proyecto Next.js real. ts-jest funcionando en el proyecto real.
+6. ✅ **HU-22 — sincronización con Supabase Auth** — completa y verificada.
 7. ⬜ **HU-02 — registro de cliente** — server action + validación + pruebas.
-8. ⬜ **HU-01 / HU-03 — login compartido con redirect por rol** — server action +
-   middleware de sesión + pruebas.
+8. 🔶 **HU-01 / HU-03 — login compartido con redirect por rol** — server action +
+   middleware de sesión + pruebas. En progreso
+   (rama `feature/HU-01-login-entrenador`, ver detalle abajo).
 
 Cada paso se documenta abajo con: qué se implementó, qué pruebas se escribieron,
 qué criterios de aceptación quedaron validados y qué decisiones de diseño se
@@ -99,7 +99,27 @@ el diseño de `AuthService` de la sesión de exploración inicial (con `Password
 no se reutiliza tal cual para HU-01/HU-02; se rediseñará cuando las implementemos.
 
 ### HU-01 — Login del entrenador
-**Estado:** ⬜ No iniciado
+
+**Nota de evolución del diseño:** el diseño inicial de `AuthService` (sesión de
+exploración) asumía manejo propio de contraseñas. Al implementar de verdad HU-22 e
+integrar Supabase Auth, se confirmó que esa responsabilidad es 100% de Supabase — el
+diseño real de `AuthService` usa un puerto `AuthProvider` en vez de `PasswordHasher`.
+
+**Estado:** 🔶 En progreso — rama `feature/HU-01-login-entrenador` (no fusionada).
+
+**Hecho:**
+- `src/lib/auth/authProvider.ts` — puerto `AuthProvider` (`signIn`, `signUp`) y
+  errores de dominio (`InvalidCredentialsError`, `EmailInUseError`).
+
+**Pendiente para continuar:**
+- `SupabaseAuthProvider` — implementación real del puerto usando
+  `supabase.auth.signInWithPassword` / `signUp`.
+- `AuthService` — orquesta `AuthProvider` + `syncSupabaseUser` (ya diseñado
+  conceptualmente en sesión, falta crear el archivo).
+- Pruebas unitarias de `AuthService.login` (éxito, credenciales inválidas, cuenta
+  desactivada, validación) con un `AuthProvider` falso en memoria.
+- Server action de login + página `src/app/login/page.tsx`.
+- Middleware de redirect si ya hay sesión activa (criterio 5).
 
 ### HU-02 — Registro de cliente
 **Estado:** ⬜ No iniciado
@@ -119,15 +139,3 @@ criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden
 - **Sprint 3 — Entrenamiento:** HU-10, HU-11, HU-12, HU-13.
 - **Sprint 4 — Nutrición:** HU-14, HU-15, HU-16.
 - **Sprint 5 — Notificaciones:** HU-17, HU-18, HU-19, HU-20.
-
-## Próxima sesión
-
-**Último commit:** `9efeac6` — HU-21 (modelos User, Entrenador, Cliente migrados con soft deletes)
-
-**Siguiente paso:** HU-22 — sincronización de usuarios con Supabase Auth.
-- Escribir el primer `PrismaClient` real de la app (con el driver adapter `@prisma/adapter-pg`
-  que ya instalamos), probablemente en `src/lib/db.ts`.
-- Implementar `syncSupabaseUser` (ya diseñado conceptualmente en la sesión anterior) contra
-  el `User` real de Supabase, no contra un repositorio en memoria.
-- Escribir las pruebas unitarias correspondientes a los criterios de aceptación de HU-22.
-- Después de esto, seguir con Valoraciones (HU-04 a HU-09).
