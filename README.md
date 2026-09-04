@@ -34,3 +34,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Setup inicial en producción
+
+El sistema es de un solo entrenador — no existe flujo de registro para ese rol
+(por diseño, ver BackLog.md). La cuenta del entrenador se crea una única vez con:
+
+\`\`\`bash
+ENTRENADOR_EMAIL="..." ENTRENADOR_PASSWORD="..." ENTRENADOR_NOMBRE="..." npx tsx scripts/create-entrenador.ts
+\`\`\`

@@ -12,7 +12,7 @@
 
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
-| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 0/5 | — | — |
+| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 4/5 | 9/9 ✅ | — |
 | 2      | Valoraciones físicas            | 6 | 0/6 | — | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
@@ -28,22 +28,20 @@ paso de la sesión de implementación.
 Orden sugerido, de menor a mayor dependencia — cada paso se marca aquí como
 `Hecho`/`Pendiente` a medida que avanzamos:
 
-1. ⬜ **Setup del proyecto** — `create-next-app` (Next.js 16.3 + TypeScript + Tailwind),
+1. ✅ **Setup del proyecto** — `create-next-app` (Next.js 16.3 + TypeScript + Tailwind),
    estructura de carpetas (`src/lib`, `src/app`, `prisma/`).
-2. ⬜ **Proyecto de Supabase** — crear el proyecto, obtener `DATABASE_URL` y las llaves
-   de Auth, variables de entorno en `.env.local` (nunca committeadas).
-3. ⬜ **HU-21 — Prisma schema** — definir el modelo de datos completo y correr
+2. ✅ **Proyecto de Supabase** — crear el proyecto, obtener `DATABASE_URL` y las llaves
+   de Auth, variables de entorno en `.env` (nunca committeadas).
+3. ✅ **HU-21 — Prisma schema** — definir el modelo de datos completo y correr
    `npx prisma migrate dev` contra el Supabase real (esta vez sí, con base de datos
-   viva, no solo el archivo declarativo).
+   viva, no solo el archivo declarativo). Migrado contra Supabase real, con soft deletes.
 4. ⬜ **Docker + docker-compose** — entorno de desarrollo local reproducible.
-5. ⬜ **Jest configurado** — mismo setup que ya validamos ayer (ts-jest), pero dentro
-   del proyecto Next.js real.
-6. ⬜ **HU-22 — sincronización con Supabase Auth** — implementar y probar antes que
-   login/registro, porque HU-01/02/03 dependen de que exista un `User` sincronizado.
+5. ✅ **Jest configurado** — mismo setup que ya validamos ayer (ts-jest), pero dentro
+   del proyecto Next.js real. ts-jest funcionando en el proyecto real.
+6. ✅ **HU-22 — sincronización con Supabase Auth** — completa y verificada.
 7. ⬜ **HU-02 — registro de cliente** — server action + validación + pruebas.
-8. ⬜ **HU-01 / HU-03 — login compartido con redirect por rol** — server action +
-   middleware de sesión + pruebas.
-
+8. ✅ **HU-01 / HU-03 — login compartido con redirect por rol** — completado,
+   5/5 criterios verificados en navegador, 4/4 pruebas unitarias.
 Cada paso se documenta abajo con: qué se implementó, qué pruebas se escribieron,
 qué criterios de aceptación quedaron validados y qué decisiones de diseño se
 tomaron (para que quede como referencia de aprendizaje, no solo como changelog).
@@ -99,13 +97,60 @@ el diseño de `AuthService` de la sesión de exploración inicial (con `Password
 no se reutiliza tal cual para HU-01/HU-02; se rediseñará cuando las implementemos.
 
 ### HU-01 — Login del entrenador
-**Estado:** ⬜ No iniciado
+
+**Estado:** ✅ Completado — 5/5 criterios de aceptación verificados en navegador,
+4/4 pruebas unitarias de `AuthService.login` pasando.
+
+**Archivos:**
+- `src/lib/auth/authProvider.ts` — puerto `AuthProvider`
+- `src/lib/auth/supabaseAuthProvider.ts` — implementación real con Supabase Auth
+- `src/lib/auth/authService.ts` — orquesta `AuthProvider` + `syncSupabaseUser`
+- `src/lib/validation/schemas.ts` — validación compartida (zod)
+- `src/app/login/page.tsx` (Server Component) + `LoginForm.tsx` (Client Component)
+- `src/app/login/actions.ts` — server action
+- `src/proxy.ts` + `src/lib/supabase/middleware.ts` — redirect si sesión activa
+- `scripts/create-entrenador.ts` — aprovisionamiento inicial (no es HU, es setup)
+- `tests/auth-login.test.ts` — 4/4 pruebas
+
+**Criterios de aceptación — verificados en navegador real, no solo en pruebas:**
+
+| # | Criterio | Método de verificación |
+|---|----------|------------------------|
+| 1 | Credenciales correctas → redirect por rol | Manual, con usuario real creado vía script admin |
+| 2 | Credenciales incorrectas → mensaje genérico | Manual |
+| 3 | Campos vacíos → validación sin tocar backend | Manual + **verificado que la validación del servidor también aplica**, quitando `required` del HTML manualmente vía DevTools |
+| 4 | Email inválido → validación de formato | Manual (mismo método que criterio 3) |
+| 5 | Sesión activa → redirect automático, no muestra login | Manual, vía `proxy.ts` |
+
+**Descubrimientos y decisiones durante la implementación (no estaban en el diseño original):**
+- Prisma 7 requiere driver adapters (`@prisma/adapter-pg`) y `prisma.config.ts` en vez
+  de `datasource.url` — cambio de arquitectura de la librería, no nuestro.
+- Supabase Auth no lanza error en `signUp` para emails duplicados (por diseño, evita
+  enumeración) — se detecta indirectamente vía `identities.length === 0`. Limitación
+  conocida: no cubre el caso "email existente pero aún sin confirmar".
+- Next.js 16 renombró `middleware` a `proxy` (deprecación real, migrado con el
+  codemod oficial `@next/codemod middleware-to-proxy`).
+- El middleware/proxy no puede usar Prisma de forma confiable en Edge Runtime —
+  se resolvió leyendo el rol directamente de `user_metadata` de Supabase, sin tocar
+  la base de datos en esa capa.
+- Cuenta con `deletedAt` no nulo no se reactiva automáticamente al iniciar sesión
+  (mismo criterio que HU-22, aplicado también aquí).
+
+**Deuda técnica / pendiente identificado durante la implementación:**
+- **No existe HU de logout** — se descubrió la ausencia al necesitar cerrar sesión
+  manualmente para probar. Documentado como HU-01b nueva en `BackLog.md`, no
+  implementada todavía.
+- El registro de entrenador no es una HU (por diseño, un solo entrenador) — se
+  resuelve con `scripts/create-entrenador.ts`, documentado en `README.md`.
 
 ### HU-02 — Registro de cliente
 **Estado:** ⬜ No iniciado
 
 ### HU-03 — Login del cliente
-**Estado:** ⬜ No iniciado
+**Estado:** ✅ Completado — cubierta por la misma implementación de HU-01
+(`AuthService.login` no distingue rol al autenticar; el redirect sí varía según
+`User.rol`, verificado con el usuario de prueba con rol `ENTRENADOR`). No requirió
+archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
 
@@ -119,15 +164,3 @@ criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden
 - **Sprint 3 — Entrenamiento:** HU-10, HU-11, HU-12, HU-13.
 - **Sprint 4 — Nutrición:** HU-14, HU-15, HU-16.
 - **Sprint 5 — Notificaciones:** HU-17, HU-18, HU-19, HU-20.
-
-## Próxima sesión
-
-**Último commit:** `9efeac6` — HU-21 (modelos User, Entrenador, Cliente migrados con soft deletes)
-
-**Siguiente paso:** HU-22 — sincronización de usuarios con Supabase Auth.
-- Escribir el primer `PrismaClient` real de la app (con el driver adapter `@prisma/adapter-pg`
-  que ya instalamos), probablemente en `src/lib/db.ts`.
-- Implementar `syncSupabaseUser` (ya diseñado conceptualmente en la sesión anterior) contra
-  el `User` real de Supabase, no contra un repositorio en memoria.
-- Escribir las pruebas unitarias correspondientes a los criterios de aceptación de HU-22.
-- Después de esto, seguir con Valoraciones (HU-04 a HU-09).
