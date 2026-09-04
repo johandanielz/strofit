@@ -18,11 +18,12 @@
 
 | ID     | Historia                                            | MoSCoW | Sprint | Estado        |
 |--------|------------------------------------------------------|--------|--------|----------------|
-| HU-21  | Modelo de datos base (Prisma schema completo)        | Must   | 1      | No iniciado    |
-| HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | No iniciado    |
-| HU-01  | Login del entrenador                                  | Must   | 1      | No iniciado    |
+| HU-21  | Modelo de datos base (Prisma schema completo)        | Must   | 1      | Implementado (parcial) |
+| HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | Completado     |
+| HU-01  | Login del entrenador                                  | Must   | 1      | Completado     |
+| HU-01b | Cerrar sesión                                         | Must   | 1      | No iniciado    |
 | HU-02  | Registro de cliente                                   | Must   | 1      | No iniciado    |
-| HU-03  | Login del cliente                                     | Must   | 1      | No iniciado    |
+| HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                | Must   | 2      | No iniciado    |
 | HU-05  | Registro de valoración física                         | Must   | 2      | No iniciado    |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
@@ -73,9 +74,10 @@ mezclar "lo planeado" con "lo realmente hecho".
    directa y consultable en una sola consulta (soporta la capa de autorización de
    HU-07 #7 / HU-09 #6 sin joins complejos).
 
-**Estado:** ⬜ No iniciado — se implementará junto con HU-01/HU-02/HU-22, ya que las
-demás entidades del entrenamiento/nutrición son prerrequisito de sprints posteriores
-pero el schema completo se define desde el arranque.
+**Estado:** 🔶 Implementado (parcial) — modelos `User`, `Entrenador`, `Cliente`
+migrados contra Supabase real, con soft deletes. Faltan las entidades de
+Valoraciones, Entrenamientos, Nutrición y Notificaciones (se agregan en sus
+respectivos sprints).
 
 ---
 
@@ -108,7 +110,8 @@ operar sin un `User` asociado en nuestra base de datos.
    otorgar acceso a datos de negocio. La reactivación requiere una acción explícita
    (fuera del alcance de HU-22; queda como HU futura si se necesita).
 
-**Estado:** ⬜ No iniciado.
+**Estado:** ✅ Completado — implementado y verificado contra Supabase real,
+5/5 pruebas unitarias.
 
 ---
 
@@ -132,11 +135,26 @@ operar sin un `User` asociado en nuestra base de datos.
 4. Email con formato inválido → validación de formato antes de autenticar.
 5. Sesión ya activa → redirige automáticamente al dashboard.
 
-**Estado:** ⬜ No iniciado. El criterio 5 (redirect si ya hay sesión activa) va a
-depender del middleware de Next.js (App Router), no solo de la lógica de negocio —
-buen punto para discutir cuando lo implementemos.
+**Estado:** ✅ Completado — 5/5 criterios verificados en navegador, 4/4 pruebas
+unitarias. El criterio 5 (redirect si sesión activa) se resolvió con `proxy.ts`
+(antes `middleware.ts`; Next.js 16 renombró la convención durante la implementación).
 
 ---
+
+## HU-01b — Cerrar sesión *(nueva, no estaba en el backlog original)*
+
+**Como** entrenador o cliente autenticado, **quiero** poder cerrar sesión **para**
+proteger mi cuenta si uso un dispositivo compartido.
+
+**Descubierta durante la implementación de HU-01**: no había ninguna historia que
+cubriera el logout — se detectó al necesitar cerrar sesión manualmente (vía DevTools)
+para poder probar los criterios 3/4/5 de HU-01 sin la interferencia del middleware.
+
+**Criterios de aceptación (borrador):**
+1. Given que el usuario está autenticado, When hace clic en "Cerrar sesión", Then el
+   sistema invalida su sesión (`supabase.auth.signOut()`) y lo redirige a `/login`.
+
+**Estado:** ⬜ No iniciado — pendiente de priorizar en un sprint.
 
 ## HU-02 — Registro de cliente
 
@@ -170,7 +188,9 @@ buen punto para discutir cuando lo implementemos.
 
 Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 
-**Estado:** ⬜ No iniciado — comparte flujo con HU-01, se implementará en paralelo.
+**Estado:** ✅ Completado — cubierta por la misma implementación de HU-01
+(`AuthService.login` no distingue rol al autenticar, el redirect sí varía según
+`User.rol`). Ver `Progress.md` → HU-01 para el detalle de archivos y pruebas.
 
 ---
 

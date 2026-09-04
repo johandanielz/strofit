@@ -12,7 +12,7 @@
 
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
-| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 2/5 | 5/5 ✅ | — |
+| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 4/5 | 9/9 ✅ | — |
 | 2      | Valoraciones físicas            | 6 | 0/6 | — | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
@@ -40,10 +40,8 @@ Orden sugerido, de menor a mayor dependencia — cada paso se marca aquí como
    del proyecto Next.js real. ts-jest funcionando en el proyecto real.
 6. ✅ **HU-22 — sincronización con Supabase Auth** — completa y verificada.
 7. ⬜ **HU-02 — registro de cliente** — server action + validación + pruebas.
-8. 🔶 **HU-01 / HU-03 — login compartido con redirect por rol** — server action +
-   middleware de sesión + pruebas. En progreso
-   (rama `feature/HU-01-login-entrenador`, ver detalle abajo).
-
+8. ✅ **HU-01 / HU-03 — login compartido con redirect por rol** — completado,
+   5/5 criterios verificados en navegador, 4/4 pruebas unitarias.
 Cada paso se documenta abajo con: qué se implementó, qué pruebas se escribieron,
 qué criterios de aceptación quedaron validados y qué decisiones de diseño se
 tomaron (para que quede como referencia de aprendizaje, no solo como changelog).
@@ -100,32 +98,59 @@ no se reutiliza tal cual para HU-01/HU-02; se rediseñará cuando las implemente
 
 ### HU-01 — Login del entrenador
 
-**Nota de evolución del diseño:** el diseño inicial de `AuthService` (sesión de
-exploración) asumía manejo propio de contraseñas. Al implementar de verdad HU-22 e
-integrar Supabase Auth, se confirmó que esa responsabilidad es 100% de Supabase — el
-diseño real de `AuthService` usa un puerto `AuthProvider` en vez de `PasswordHasher`.
+**Estado:** ✅ Completado — 5/5 criterios de aceptación verificados en navegador,
+4/4 pruebas unitarias de `AuthService.login` pasando.
 
-**Estado:** 🔶 En progreso — rama `feature/HU-01-login-entrenador` (no fusionada).
+**Archivos:**
+- `src/lib/auth/authProvider.ts` — puerto `AuthProvider`
+- `src/lib/auth/supabaseAuthProvider.ts` — implementación real con Supabase Auth
+- `src/lib/auth/authService.ts` — orquesta `AuthProvider` + `syncSupabaseUser`
+- `src/lib/validation/schemas.ts` — validación compartida (zod)
+- `src/app/login/page.tsx` (Server Component) + `LoginForm.tsx` (Client Component)
+- `src/app/login/actions.ts` — server action
+- `src/proxy.ts` + `src/lib/supabase/middleware.ts` — redirect si sesión activa
+- `scripts/create-entrenador.ts` — aprovisionamiento inicial (no es HU, es setup)
+- `tests/auth-login.test.ts` — 4/4 pruebas
 
-**Hecho:**
-- `src/lib/auth/authProvider.ts` — puerto `AuthProvider` (`signIn`, `signUp`) y
-  errores de dominio (`InvalidCredentialsError`, `EmailInUseError`).
+**Criterios de aceptación — verificados en navegador real, no solo en pruebas:**
 
-**Pendiente para continuar:**
-- `SupabaseAuthProvider` — implementación real del puerto usando
-  `supabase.auth.signInWithPassword` / `signUp`.
-- `AuthService` — orquesta `AuthProvider` + `syncSupabaseUser` (ya diseñado
-  conceptualmente en sesión, falta crear el archivo).
-- Pruebas unitarias de `AuthService.login` (éxito, credenciales inválidas, cuenta
-  desactivada, validación) con un `AuthProvider` falso en memoria.
-- Server action de login + página `src/app/login/page.tsx`.
-- Middleware de redirect si ya hay sesión activa (criterio 5).
+| # | Criterio | Método de verificación |
+|---|----------|------------------------|
+| 1 | Credenciales correctas → redirect por rol | Manual, con usuario real creado vía script admin |
+| 2 | Credenciales incorrectas → mensaje genérico | Manual |
+| 3 | Campos vacíos → validación sin tocar backend | Manual + **verificado que la validación del servidor también aplica**, quitando `required` del HTML manualmente vía DevTools |
+| 4 | Email inválido → validación de formato | Manual (mismo método que criterio 3) |
+| 5 | Sesión activa → redirect automático, no muestra login | Manual, vía `proxy.ts` |
+
+**Descubrimientos y decisiones durante la implementación (no estaban en el diseño original):**
+- Prisma 7 requiere driver adapters (`@prisma/adapter-pg`) y `prisma.config.ts` en vez
+  de `datasource.url` — cambio de arquitectura de la librería, no nuestro.
+- Supabase Auth no lanza error en `signUp` para emails duplicados (por diseño, evita
+  enumeración) — se detecta indirectamente vía `identities.length === 0`. Limitación
+  conocida: no cubre el caso "email existente pero aún sin confirmar".
+- Next.js 16 renombró `middleware` a `proxy` (deprecación real, migrado con el
+  codemod oficial `@next/codemod middleware-to-proxy`).
+- El middleware/proxy no puede usar Prisma de forma confiable en Edge Runtime —
+  se resolvió leyendo el rol directamente de `user_metadata` de Supabase, sin tocar
+  la base de datos en esa capa.
+- Cuenta con `deletedAt` no nulo no se reactiva automáticamente al iniciar sesión
+  (mismo criterio que HU-22, aplicado también aquí).
+
+**Deuda técnica / pendiente identificado durante la implementación:**
+- **No existe HU de logout** — se descubrió la ausencia al necesitar cerrar sesión
+  manualmente para probar. Documentado como HU-01b nueva en `BackLog.md`, no
+  implementada todavía.
+- El registro de entrenador no es una HU (por diseño, un solo entrenador) — se
+  resuelve con `scripts/create-entrenador.ts`, documentado en `README.md`.
 
 ### HU-02 — Registro de cliente
 **Estado:** ⬜ No iniciado
 
 ### HU-03 — Login del cliente
-**Estado:** ⬜ No iniciado
+**Estado:** ✅ Completado — cubierta por la misma implementación de HU-01
+(`AuthService.login` no distingue rol al autenticar; el redirect sí varía según
+`User.rol`, verificado con el usuario de prueba con rol `ENTRENADOR`). No requirió
+archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
 
