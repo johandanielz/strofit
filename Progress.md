@@ -143,6 +143,39 @@ no se reutiliza tal cual para HU-01/HU-02; se rediseñará cuando las implemente
 - El registro de entrenador no es una HU (por diseño, un solo entrenador) — se
   resuelve con `scripts/create-entrenador.ts`, documentado en `README.md`.
 
+### HU-01b — Cerrar sesión
+
+**Estado:** ✅ Completado — verificado en navegador.
+
+**Archivos:**
+- `src/app/logout/actions.ts` — server action (`supabase.auth.signOut()`)
+- `src/app/(app)/layout.tsx` — layout compartido para rutas autenticadas, con
+  guardia de sesión (`redirect('/login')` si no hay usuario)
+- `src/app/(app)/LogoutButton.tsx` — botón, Server Component (sin `useActionState`,
+  no hay estado que mostrar)
+- `src/app/(app)/dashboard/page.tsx` y `mi-progreso/page.tsx` — placeholders,
+  primera vez que el login llega a una página real en vez de 404
+
+**Verificación manual:**
+- ✅ Login → llega al dashboard real (ya no 404)
+- ✅ Clic en "Cerrar sesión" → vuelve a `/login`
+- ✅ Con sesión cerrada, acceso directo a `/dashboard` → redirigido a `/login`
+  (confirma que la protección vive en el layout, no solo en el botón)
+
+**Decisión de diseño:** se usó un route group `(app)` para separar el layout de
+rutas autenticadas del de `/login` — evita mostrar "Cerrar sesión" en una pantalla
+donde por definición no hay sesión activa.
+
+**Nota:** no se escribieron pruebas unitarias de Jest para esta HU — `logoutAction`
+es pegamento puro hacia el SDK de Supabase (mismo criterio aplicado a
+`SupabaseAuthProvider`), sin lógica de negocio propia que aislar y probar.
+
+**Hallazgo durante la implementación (no relacionado con la HU en sí):** conflicto
+conocido entre el Preflight de Tailwind (`img { height: auto }` global) y la
+validación de aspect-ratio de `next/image` cuando se pasan `width`/`height` fijos —
+se resolvió con un `style` inline explícito en el logo del login
+(`src/app/login/page.tsx`), que tiene prioridad sobre las clases de Tailwind.
+
 ### HU-02 — Registro de cliente
 **Estado:** ⬜ No iniciado
 

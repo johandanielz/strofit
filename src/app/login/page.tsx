@@ -11,6 +11,7 @@ export default function LoginPage() {
                     width={220}
                     height={80}
                     className="mb-10"
+                    style={{ width: '220px', height: '80px' }}
                     priority
                 />
                 <p className="text-3xl font-semibold leading-snug text-white">
