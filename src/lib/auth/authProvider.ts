@@ -1,16 +1,16 @@
 export interface AuthUser {
-  id: string; // supabaseUserId
-  email: string;
-  userMetadata: { rol?: string; nombre?: string };
+    id: string;
+    email: string;
+    userMetadata: { rol?: string; nombre?: string; telefono?: string };
 }
 
 export interface AuthProvider {
-  signIn(email: string, password: string): Promise<AuthUser>;
-  signUp(
-    email: string,
-    password: string,
-    metadata: { rol: string; nombre: string }
-  ): Promise<AuthUser>;
+    signIn(email: string, password: string): Promise<AuthUser>;
+    signUp(
+        email: string,
+        password: string,
+        metadata: { rol: string; nombre: string; telefono: string }
+    ): Promise<AuthUser>;
 }
 
 export class InvalidCredentialsError extends Error {

@@ -17,31 +17,30 @@ export function createSupabaseAuthProvider(supabase: SupabaseClient): AuthProvid
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
-                options: { data: metadata },
+                options: { data: metadata }, // ya incluye telefono automáticamente
             });
 
             if (error) {
-                throw error; // error genuinamente inesperado (red, servidor caído, etc.)
+                throw error;
             }
 
-            // Supabase no lanza error para emails duplicados (evita enumeración por diseño).
-            // Cuando el email ya existe y está confirmado, `identities` viene vacío.
             if (data.user && data.user.identities && data.user.identities.length === 0) {
                 throw new EmailInUseError();
             }
 
             return toAuthUser(data.user!.id, data.user!.email!, data.user!.user_metadata);
-        }
+        },
     };
 }
 
 function toAuthUser(id: string, email: string, userMetadata: Record<string, unknown>): AuthUser {
-  return {
-    id,
-    email,
-    userMetadata: {
-      rol: userMetadata.rol as string | undefined,
-      nombre: userMetadata.nombre as string | undefined,
-    },
-  };
+    return {
+        id,
+        email,
+        userMetadata: {
+            rol: userMetadata.rol as string | undefined,
+            nombre: userMetadata.nombre as string | undefined,
+            telefono: userMetadata.telefono as string | undefined,
+        },
+    };
 }
