@@ -78,6 +78,7 @@ describe('HU-22: sincronización de usuarios con Supabase Auth', () => {
         supabaseUserId: 'sb-5',
         email: 'baja@strofit.com',
         nombre: 'Dado de baja',
+        telefono: null,
         rol: 'CLIENTE',
         deletedAt: new Date('2026-01-01'),
       },

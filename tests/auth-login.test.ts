@@ -1,6 +1,7 @@
 import { AuthService } from '../src/lib/auth/authService';
 import { AuthProvider, InvalidCredentialsError } from '../src/lib/auth/authProvider';
 import { UserSyncRepository, SyncedUser } from '../src/lib/auth/syncUser';
+import { ClienteRepository } from '../src/lib/auth/clienteRepository';
 
 function makeFakeAuthProvider(
     validUsers: { email: string; password: string; supabaseId: string; rol: string }[]
@@ -42,6 +43,14 @@ function makeUserSyncRepo(seed: SyncedUser[] = []): UserSyncRepository {
     };
 }
 
+function makeFakeClienteRepo(): ClienteRepository {
+    return {
+        async crearParaUsuario(userId) {
+            return { id: 'cliente-fake-1', entrenadorId: 'entrenador-fake-1' };
+        },
+    };
+}
+
 describe('HU-01 / HU-03: AuthService.login', () => {
     const entrenadorCreds = {
         email: 'entrenador@strofit.com',
@@ -54,7 +63,7 @@ describe('HU-01 / HU-03: AuthService.login', () => {
     test('entrenador con credenciales correctas se autentica y se sincroniza', async () => {
         const authProvider = makeFakeAuthProvider([entrenadorCreds]);
         const userSyncRepo = makeUserSyncRepo();
-        const service = new AuthService(authProvider, userSyncRepo);
+        const service = new AuthService(authProvider, userSyncRepo, makeFakeClienteRepo());
 
         const result = await service.login({
             email: entrenadorCreds.email,
@@ -70,7 +79,7 @@ describe('HU-01 / HU-03: AuthService.login', () => {
     // Criterio 2 (HU-01): credenciales incorrectas -> mensaje genérico
     test('password incorrecto devuelve INVALID_CREDENTIALS', async () => {
         const authProvider = makeFakeAuthProvider([entrenadorCreds]);
-        const service = new AuthService(authProvider, makeUserSyncRepo());
+        const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
 
         const result = await service.login({
             email: entrenadorCreds.email,
@@ -85,7 +94,7 @@ describe('HU-01 / HU-03: AuthService.login', () => {
     test('campos vacíos son rechazados antes de llamar al AuthProvider', async () => {
         const authProvider = makeFakeAuthProvider([entrenadorCreds]);
         const signInSpy = jest.spyOn(authProvider, 'signIn');
-        const service = new AuthService(authProvider, makeUserSyncRepo());
+        const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
 
         const result = await service.login({ email: '', password: '' });
 
@@ -103,11 +112,12 @@ describe('HU-01 / HU-03: AuthService.login', () => {
                 supabaseUserId: entrenadorCreds.supabaseId,
                 email: entrenadorCreds.email,
                 nombre: 'Entrenador Dado de Baja',
+                telefono: null,
                 rol: 'ENTRENADOR',
                 deletedAt: new Date('2026-01-01'),
             },
         ]);
-        const service = new AuthService(authProvider, userSyncRepo);
+        const service = new AuthService(authProvider, userSyncRepo, makeFakeClienteRepo());
 
         const result = await service.login({
             email: entrenadorCreds.email,
