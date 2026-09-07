@@ -21,7 +21,7 @@
 | HU-21  | Modelo de datos base (Prisma schema completo)        | Must   | 1      | Implementado (parcial) |
 | HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | Completado     |
 | HU-01  | Login del entrenador                                  | Must   | 1      | Completado     |
-| HU-01b | Cerrar sesión                                         | Must   | 1      | No iniciado    |
+| HU-01b | Cerrar sesión                                         | Must   | 1      | Completado    |
 | HU-02  | Registro de cliente                                   | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                | Must   | 2      | No iniciado    |
@@ -154,7 +154,10 @@ para poder probar los criterios 3/4/5 de HU-01 sin la interferencia del middlewa
 1. Given que el usuario está autenticado, When hace clic en "Cerrar sesión", Then el
    sistema invalida su sesión (`supabase.auth.signOut()`) y lo redirige a `/login`.
 
-**Estado:** ⬜ No iniciado — pendiente de priorizar en un sprint.
+**Estado:** ✅ Completado — verificado en navegador (login → dashboard real →
+logout → intento de acceso directo bloqueado por el layout de `(app)`).
+
+---
 
 ## HU-02 — Registro de cliente
 
