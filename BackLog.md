@@ -181,6 +181,15 @@ logout → intento de acceso directo bloqueado por el layout de `(app)`).
 5. Teléfono con formato inválido → validación de formato.
 6. Password que no cumple requisitos mínimos → mensaje de requisitos no cumplidos.
 
+> **Nota de diseño (decidida al implementar):** el modelo de datos ya soporta
+> múltiples entrenadores (`Cliente.entrenadorId` es una relación real, no un
+> valor fijo), pero el MVP es explícitamente de un solo entrenador. Se resuelve
+> con `prisma.entrenador.findFirst()` al registrar un cliente nuevo — funciona
+> hoy sin necesidad de un selector de entrenador, y el día que se soporten varios,
+> el cambio es reemplazar esa única línea por la selección real del usuario, sin
+> tocar el resto de la arquitectura (YAGNI aplicado conscientemente, no por
+> descuido).
+
 **Estado:** ⬜ No iniciado.
 
 ---
