@@ -3,16 +3,17 @@ export type Rol = 'ENTRENADOR' | 'CLIENTE';
 export interface SupabaseAuthUser {
   id: string;
   email: string;
-  userMetadata: { rol?: string; nombre?: string };
+  userMetadata: { rol?: string; nombre?: string; telefono?: string };
 }
 
 export interface SyncedUser {
-  id: string;
-  supabaseUserId: string;
-  email: string;
-  nombre: string;
-  rol: Rol;
-  deletedAt: Date | null;
+    id: string;
+    supabaseUserId: string;
+    email: string;
+    nombre: string;
+    telefono: string | null;
+    rol: Rol;
+    deletedAt: Date | null;
 }
 
 export interface UserSyncRepository {
@@ -59,10 +60,11 @@ export async function syncSupabaseUser(
   }
 
   const created = await repo.create({
-    supabaseUserId: authUser.id,
-    email: authUser.email,
-    nombre: authUser.userMetadata.nombre ?? authUser.email,
-    rol,
+      supabaseUserId: authUser.id,
+      email: authUser.email,
+      nombre: authUser.userMetadata.nombre ?? authUser.email,
+      telefono: authUser.userMetadata.telefono ?? null,
+      rol,
   });
   return { status: 'OK', user: created };
 }
