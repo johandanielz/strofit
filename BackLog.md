@@ -22,7 +22,7 @@
 | HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | Completado     |
 | HU-01  | Login del entrenador                                  | Must   | 1      | Completado     |
 | HU-01b | Cerrar sesión                                         | Must   | 1      | Completado    |
-| HU-02  | Registro de cliente                                   | Must   | 1      | No iniciado    |
+| HU-02  | Registro de cliente                                   | Must   | 1      | Completado    |
 | HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                | Must   | 2      | No iniciado    |
 | HU-05  | Registro de valoración física                         | Must   | 2      | No iniciado    |
@@ -190,7 +190,8 @@ logout → intento de acceso directo bloqueado por el layout de `(app)`).
 > tocar el resto de la arquitectura (YAGNI aplicado conscientemente, no por
 > descuido).
 
-**Estado:** ⬜ No iniciado.
+**Estado:** ✅ Completado — 6/6 criterios verificados en navegador contra Supabase
+real, 10 pruebas unitarias de `AuthService.register`.
 
 ---
 

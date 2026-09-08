@@ -12,7 +12,7 @@
 
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
-| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 4/5 | 9/9 ✅ | — |
+| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 5/5 | 19/19 ✅ | — |
 | 2      | Valoraciones físicas            | 6 | 0/6 | — | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
@@ -39,7 +39,8 @@ Orden sugerido, de menor a mayor dependencia — cada paso se marca aquí como
 5. ✅ **Jest configurado** — mismo setup que ya validamos ayer (ts-jest), pero dentro
    del proyecto Next.js real. ts-jest funcionando en el proyecto real.
 6. ✅ **HU-22 — sincronización con Supabase Auth** — completa y verificada.
-7. ⬜ **HU-02 — registro de cliente** — server action + validación + pruebas.
+7. ✅ **HU-02 — registro de cliente** — completado, 6/6 criterios verificados
+   en navegador, 10/10 pruebas unitarias.
 8. ✅ **HU-01 / HU-03 — login compartido con redirect por rol** — completado,
    5/5 criterios verificados en navegador, 4/4 pruebas unitarias.
 Cada paso se documenta abajo con: qué se implementó, qué pruebas se escribieron,
@@ -177,7 +178,55 @@ se resolvió con un `style` inline explícito en el logo del login
 (`src/app/login/page.tsx`), que tiene prioridad sobre las clases de Tailwind.
 
 ### HU-02 — Registro de cliente
-**Estado:** ⬜ No iniciado
+
+**Estado:** ✅ Completado — 6/6 criterios verificados en navegador, 10/10 pruebas
+unitarias de `AuthService.register`. Suite completa: 19/19.
+
+**Archivos:**
+- `src/lib/auth/clienteRepository.ts` — `ClienteRepository`, `findFirst()` para
+  resolver el entrenador único del MVP
+- `src/lib/auth/authService.ts` — método `register()` agregado
+- `src/lib/auth/authProvider.ts` / `supabaseAuthProvider.ts` — extendidos con
+  `telefono` en `signUp`
+- `src/lib/auth/syncUser.ts` — `SyncedUser` extendido con `telefono`
+- `src/app/register/page.tsx` + `RegisterForm.tsx` + `actions.ts`
+- `tests/auth-login.test.ts` — 10 pruebas nuevas agregadas (mismo archivo que login,
+  reutiliza los helpers falsos ya existentes)
+
+**Verificación manual contra Supabase real:**
+- ✅ Registro exitoso → `User` y `Cliente` creados correctamente
+- ✅ `Cliente.entrenadorId` apunta al entrenador real (vía `findFirst()`)
+- ✅ Sin sesión activa después del registro (criterio 1: redirige a login, no
+  autentica automáticamente)
+
+**Decisión de diseño (documentada antes de implementar):** `findFirst()` para
+resolver el entrenador único del MVP en vez de un selector — YAGNI consciente,
+ver nota en `BackLog.md` → HU-02.
+
+**Deuda técnica identificada (aceptada conscientemente):** la creación de `User`
+y `Cliente` no está en una transacción — si `crearParaUsuario` falla después de
+que `syncSupabaseUser` ya creó el `User`, queda un `User` sin `Cliente`
+correspondiente. Bajo riesgo en el MVP (un solo entrenador, siempre disponible
+tras `create-entrenador.ts`); se resolvería con `prisma.$transaction` en un futuro
+sprint de hardening.
+
+**Hallazgos importantes durante la implementación:**
+1. **`ts-jest` no estaba chequeando tipos completos** — `isolatedModules: true`
+   (heredado del `tsconfig.json` de Next.js) hacía que Jest compilara cada archivo
+   de forma aislada, sin detectar errores de tipos entre archivos (argumentos
+   faltantes, propiedades requeridas ausentes). Corregido con
+   `isolatedModules: false` explícito en `jest.config.js`. Confirmado con
+   `tsc --noEmit` como referencia cruzada antes de confiar en el fix.
+2. **`create-entrenador.ts` no creaba las filas en Prisma** — solo creaba el
+   usuario en Supabase Auth, dejando `Entrenador` vacío en la base de datos.
+   Causó el primer intento de registro real (fallido con
+   `SIN_ENTRENADOR_DISPONIBLE`). Corregido para crear `User` y `Entrenador`
+   también en Prisma.
+3. **Desactivar "Confirm email" en Supabase cambió el comportamiento de `signUp`**
+   — pasó a devolver sesión activa automáticamente. Como HU-02 no debe autenticar
+   al registrarse, se agregó un `supabase.auth.signOut()` explícito en la server
+   action antes del redirect a `/login`. Sin este ajuste, `proxy.ts` (de HU-01,
+   criterio 5) redirigía al dashboard en vez de mostrar el login.
 
 ### HU-03 — Login del cliente
 **Estado:** ✅ Completado — cubierta por la misma implementación de HU-01

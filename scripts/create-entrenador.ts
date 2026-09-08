@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { prisma } from '../src/lib/db';
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,11 +25,24 @@ async function main() {
     });
 
     if (error) {
-        console.error('Error:', error);
+        console.error('Error creando usuario en Supabase Auth:', error);
         return;
     }
 
-    console.log('Entrenador creado:', data.user.id, data.user.email);
+    const user = await prisma.user.create({
+        data: {
+            supabaseUserId: data.user.id,
+            email: data.user.email!,
+            nombre,
+            rol: 'ENTRENADOR',
+        },
+    });
+
+    await prisma.entrenador.create({
+        data: { userId: user.id },
+    });
+
+    console.log('Entrenador creado en Supabase Auth y en Prisma:', user.id);
 }
 
 main();

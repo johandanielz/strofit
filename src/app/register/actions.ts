@@ -39,7 +39,13 @@ export async function registerAction(
         if (result.code === 'SIN_ENTRENADOR_DISPONIBLE') {
             return { error: 'No es posible registrarse en este momento. Intenta más tarde.' };
         }
+        return {};
     }
+
+    // Supabase crea sesión automáticamente al hacer signUp (con "Confirm email"
+    // desactivado). El registro no debe autenticar a la persona todavía —
+    // cerramos esa sesión explícitamente antes de mandarla al login.
+    await supabase.auth.signOut();
 
     redirect('/login');
 }
