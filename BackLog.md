@@ -207,7 +207,31 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 
 ---
 
-## HU-04 a HU-20
+## HU-04 — Agenda de valoraciones
+
+> **Nota de alcance (decidida al planificar Sprint 2):** el documento original
+> tiene una contradicción — `1.2.2.1` no incluye "Agenda de valoraciones" en el
+> MVP, pero `1.2.2.2` la excluye explícitamente, mientras que la tabla MoSCoW
+> (`3.1`) la marca como `Must`. Se decide **priorizarla en el MVP** porque el
+> entrenador ya agenda valoraciones verbalmente con sus clientes — automatizar
+> esto desde el inicio entrega valor real inmediato, en vez de mantener un
+> proceso manual que la plataforma ya podría resolver.
+
+> **Duración estándar de valoración (confirmada con el entrenador):** la
+> valoración real toma ~10 minutos, pero se define la duración estándar del
+> sistema en **15 minutos** — colchón intencional de 5 minutos para absorber
+> imprevistos (retrasos del cliente, mediciones que toman más tiempo) sin que
+> se acumule atraso en las citas siguientes del día.
+
+> **Pendiente técnico para HU-05:** `CitaAgenda` se migra sin relación hacia
+> `Valoracion` (ese modelo aún no existe, sus campos dependen de confirmación
+> pendiente con el entrenador). Cuando se implemente HU-05, agregar
+> `valoracion Valoracion?` a `CitaAgenda` y el lado inverso correspondiente,
+> requiriendo una migración adicional.
+
+---
+
+## HU-05 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada
