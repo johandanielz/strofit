@@ -5,6 +5,7 @@ import { AuthService } from '@/lib/auth/authService';
 import { createSupabaseAuthProvider } from '@/lib/auth/supabaseAuthProvider';
 import { prismaUserSyncRepository } from '@/lib/auth/prismaUserSyncRepository';
 import { createClient } from '@/lib/supabase/server';
+import { prismaClienteRepository } from '@/lib/auth/clienteRepository';
 
 export type LoginActionState = {
     error?: string;
@@ -17,8 +18,9 @@ export async function loginAction(
     const supabase = await createClient();
     const authService = new AuthService(
         createSupabaseAuthProvider(supabase),
-        prismaUserSyncRepository
-    );
+        prismaUserSyncRepository,
+        prismaClienteRepository
+);
 
     const result = await authService.login({
         email: formData.get('email'),
