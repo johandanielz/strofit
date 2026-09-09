@@ -60,3 +60,70 @@ export async function agendarAction(
     revalidatePath('/dashboard/agenda');
     return { success: true };
 }
+
+export type ReagendarActionState = {
+    error?: string;
+    success?: boolean;
+};
+
+export async function reagendarAction(
+    prevState: ReagendarActionState,
+    formData: FormData
+): Promise<ReagendarActionState> {
+    const entrenadorId = await obtenerEntrenadorIdDeLaSesion();
+    const agendaService = new AgendaService(prismaAgendaRepository);
+
+    const citaId = formData.get('citaId') as string;
+
+    const result = await agendaService.reagendar(entrenadorId, citaId, {
+        fechaInicio: formData.get('fechaInicio'),
+    });
+
+    if (!result.ok) {
+        if (result.code === 'VALIDATION_ERROR') {
+            return { error: result.errors.join(', ') };
+        }
+        if (result.code === 'HORARIO_PASADO') {
+            return { error: 'No puedes reagendar a una fecha u hora pasada' };
+        }
+        if (result.code === 'HORARIO_NO_DISPONIBLE') {
+            return { error: 'Ese horario ya está ocupado por otra cita' };
+        }
+        if (result.code === 'CITA_NO_ENCONTRADA') {
+            return { error: 'La cita que intentas reagendar no existe' };
+        }
+    }
+
+    revalidatePath('/dashboard/agenda');
+    return { success: true };
+}
+
+export type CancelarActionState = {
+    error?: string;
+    success?: boolean;
+};
+
+export async function cancelarAction(
+    prevState: CancelarActionState,
+    formData: FormData
+): Promise<CancelarActionState> {
+    const agendaService = new AgendaService(prismaAgendaRepository);
+    const citaId = formData.get('citaId') as string;
+
+    const result = await agendaService.cancelar(citaId);
+
+    if (!result.ok) {
+        if (result.code === 'CITA_NO_ENCONTRADA') {
+            return { error: 'La cita que intentas cancelar no existe' };
+        }
+        if (result.code === 'CITA_YA_REALIZADA') {
+            return { error: 'No puedes cancelar una cita que ya fue realizada' };
+        }
+        if (result.code === 'CITA_YA_CANCELADA') {
+            return { error: 'Esta cita ya estaba cancelada' };
+        }
+    }
+
+    revalidatePath('/dashboard/agenda');
+    return { success: true };
+}

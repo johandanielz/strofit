@@ -196,3 +196,81 @@ describe('HU-04: AgendaService.reagendar', () => {
         if (!result.ok) expect(result.code).toBe('CITA_NO_ENCONTRADA');
     });
 });
+
+describe('HU-04: AgendaService.cancelar', () => {
+    // Criterio 7: cancelar libera el horario
+    test('cancela exitosamente una cita agendada', async () => {
+        const cita: AgendaCita = {
+            id: 'cita-1',
+            clienteId: CLIENTE_ID,
+            fechaInicio: MANANA_10AM,
+            fechaFin: new Date(MANANA_10AM.getTime() + 15 * 60_000),
+            observaciones: null,
+            realizada: false,
+            cancelada: false,
+            reagendada: false,
+            fechaInicioOriginal: null,
+        };
+        const repo = makeFakeAgendaRepo([cita]);
+        const service = new AgendaService(repo);
+
+        const result = await service.cancelar('cita-1');
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.cita.cancelada).toBe(true);
+    });
+
+    // Decisión de negocio de hoy: no se puede cancelar una cita ya realizada
+    test('rechaza cancelar una cita que ya fue realizada', async () => {
+        const cita: AgendaCita = {
+            id: 'cita-1',
+            clienteId: CLIENTE_ID,
+            fechaInicio: MANANA_10AM,
+            fechaFin: new Date(MANANA_10AM.getTime() + 15 * 60_000),
+            observaciones: null,
+            realizada: true,
+            cancelada: false,
+            reagendada: false,
+            fechaInicioOriginal: null,
+        };
+        const repo = makeFakeAgendaRepo([cita]);
+        const service = new AgendaService(repo);
+
+        const result = await service.cancelar('cita-1');
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('CITA_YA_REALIZADA');
+    });
+
+    // Decisión de negocio de hoy: avisar explícitamente si ya estaba cancelada
+    test('avisa explícitamente si la cita ya estaba cancelada', async () => {
+        const cita: AgendaCita = {
+            id: 'cita-1',
+            clienteId: CLIENTE_ID,
+            fechaInicio: MANANA_10AM,
+            fechaFin: new Date(MANANA_10AM.getTime() + 15 * 60_000),
+            observaciones: null,
+            realizada: false,
+            cancelada: true,
+            reagendada: false,
+            fechaInicioOriginal: null,
+        };
+        const repo = makeFakeAgendaRepo([cita]);
+        const service = new AgendaService(repo);
+
+        const result = await service.cancelar('cita-1');
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('CITA_YA_CANCELADA');
+    });
+
+    test('rechaza cancelar una cita que no existe', async () => {
+        const repo = makeFakeAgendaRepo();
+        const service = new AgendaService(repo);
+
+        const result = await service.cancelar('no-existe');
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('CITA_NO_ENCONTRADA');
+    });
+});

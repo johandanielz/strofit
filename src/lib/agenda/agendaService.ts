@@ -27,6 +27,12 @@ export type ReagendarResult =
     | { ok: false; code: 'HORARIO_NO_DISPONIBLE' }
     | { ok: false; code: 'CITA_NO_ENCONTRADA' };
 
+export type CancelarResult =
+    | { ok: true; cita: AgendaCita }
+    | { ok: false; code: 'CITA_NO_ENCONTRADA' }
+    | { ok: false; code: 'CITA_YA_REALIZADA' }
+    | { ok: false; code: 'CITA_YA_CANCELADA' };
+
 export class AgendaService {
     constructor(private readonly agendaRepo: AgendaRepository) {}
 
@@ -96,6 +102,24 @@ export class AgendaService {
         }
 
         const cita = await this.agendaRepo.reagendar(citaId, nuevaFechaInicio, nuevaFechaFin);
+        return { ok: true, cita };
+    }
+
+    async cancelar(citaId: string): Promise<CancelarResult> {
+        const existente = await this.agendaRepo.obtenerPorId(citaId);
+        if (!existente) {
+            return { ok: false, code: 'CITA_NO_ENCONTRADA' };
+        }
+
+        if (existente.realizada) {
+            return { ok: false, code: 'CITA_YA_REALIZADA' };
+        }
+
+        if (existente.cancelada) {
+            return { ok: false, code: 'CITA_YA_CANCELADA' };
+        }
+
+        const cita = await this.agendaRepo.cancelar(citaId);
         return { ok: true, cita };
     }
 }
