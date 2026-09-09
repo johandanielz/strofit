@@ -24,7 +24,7 @@
 | HU-01b | Cerrar sesión                                         | Must   | 1      | Completado    |
 | HU-02  | Registro de cliente                                   | Must   | 1      | Completado    |
 | HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
-| HU-04  | Agenda de valoraciones                                | Must   | 2      | No iniciado    |
+| HU-04  | Agenda de valoraciones                                | Must   | 2      | En progreso    |
 | HU-05  | Registro de valoración física                         | Must   | 2      | No iniciado    |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
@@ -228,6 +228,11 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 > pendiente con el entrenador). Cuando se implemente HU-05, agregar
 > `valoracion Valoracion?` a `CitaAgenda` y el lado inverso correspondiente,
 > requiriendo una migración adicional.
+
+**Estado:** 🔶 En progreso — lógica de negocio completa y probada
+(`AgendaService`, `AgendaRepository`, 7/7 pruebas unitarias). Server action
+`agendarAction` implementada. Pendiente: server action `reagendarAction`,
+`cancelarAction`, y toda la UI (formulario + vista de calendario, criterio 5).
 
 ---
 
