@@ -48,13 +48,21 @@ model Entrenador {
   @@index([deletedAt])
 }
 
+enum Sexo {
+  MASCULINO
+  FEMENINO
+}
+
 model Cliente {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation("ClienteUser", fields: [userId], references: [id], onDelete: Restrict)
-  entrenadorId String
-  entrenador   Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
-  deletedAt    DateTime?
+  id              String     @id @default(uuid())
+  userId          String     @unique
+  user            User       @relation("ClienteUser", fields: [userId], references: [id], onDelete: Restrict)
+  entrenadorId    String
+  entrenador      Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
+  sexo            Sexo
+  fechaNacimiento DateTime
+  factorActividad Float
+  deletedAt       DateTime?
 
   @@index([entrenadorId])
   @@index([deletedAt])
