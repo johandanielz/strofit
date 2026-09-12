@@ -64,6 +64,25 @@ model Cliente {
   factorActividad Float
   deletedAt       DateTime?
 
+  citasAgenda CitaAgenda[]
+
   @@index([entrenadorId])
   @@index([deletedAt])
+}
+
+model CitaAgenda {
+  id                  String    @id @default(uuid())
+  clienteId           String
+  cliente             Cliente   @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  fechaInicio         DateTime
+  fechaFin            DateTime
+  observaciones       String?
+  realizada           Boolean   @default(false)
+  cancelada           Boolean   @default(false)
+  reagendada          Boolean   @default(false)
+  fechaInicioOriginal DateTime?
+  createdAt           DateTime  @default(now())
+  deletedAt           DateTime?
+
+  @@index([clienteId, fechaInicio])
 }

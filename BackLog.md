@@ -22,9 +22,10 @@
 | HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | Completado     |
 | HU-01  | Login del entrenador                                  | Must   | 1      | Completado     |
 | HU-01b | Cerrar sesión                                         | Must   | 1      | Completado    |
-| HU-02  | Registro de cliente                                   | Must   | 1      | Completado    |
+| HU-02  | Registro de cliente                                   | Must   | 1      | Reemplazada    |
+| HU-02b  | Alta de cliente por el entrenador                    | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
-| HU-04  | Agenda de valoraciones                                | Must   | 2      | No iniciado    |
+| HU-04  | Agenda de valoraciones                                | Must   | 2      | En progreso    |
 | HU-05  | Registro de valoración física                         | Must   | 2      | No iniciado    |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
@@ -190,8 +191,43 @@ logout → intento de acceso directo bloqueado por el layout de `(app)`).
 > tocar el resto de la arquitectura (YAGNI aplicado conscientemente, no por
 > descuido).
 
-**Estado:** ✅ Completado — 6/6 criterios verificados en navegador contra Supabase
-real, 10 pruebas unitarias de `AuthService.register`.
+> **Cambio de diseño (decidido al confirmar datos con el entrenador para HU-05):**
+> el registro público en `/register` se elimina. Preocupación real de negocio: el
+> sistema asignaba automáticamente cualquier registro nuevo al único entrenador
+> existente, sin que él lo supiera ni aprobara — cualquiera con el link podía
+> vincularse. Se reemplaza por **HU-02b: alta de cliente por el entrenador**
+> (ver abajo). La lógica de `AuthService.register()` y sus pruebas siguen siendo
+> válidas — cambia *quién* la dispara, no *cómo* funciona.
+>
+> **Descartado por ahora, no por siempre:** invitaciones individuales por email
+> con link único (más seguro, más profesional) — requiere infraestructura de envío
+> de correo transaccional que no está montada. Queda como mejora post-MVP.
+
+**Estado:** 🔶 Reemplazada — ver HU-02b. La lógica de `AuthService.register()`
+sigue siendo válida y reutilizable, solo cambia quién la dispara.
+
+---
+
+## HU-02b — Alta de cliente por el entrenador *(nueva, reemplaza el registro público de HU-02)*
+
+**Como** entrenador, **quiero** dar de alta a un cliente nuevo yo mismo **para**
+controlar exactamente quién queda vinculado a mí, evitando que cualquiera con el
+link de registro se asocie sin mi conocimiento.
+
+**Criterios de aceptación:**
+1. Given que el entrenador está autenticado, When accede a "Agregar cliente" e
+   ingresa nombre, email, teléfono, sexo, fecha de nacimiento y factor de
+   actividad, Then el sistema crea la cuenta del cliente (rol `CLIENTE`,
+   vinculada a este entrenador) con una contraseña inicial.
+2. Given que el email ya está registrado, When el entrenador intenta crear el
+   cliente, Then el sistema muestra un mensaje de email en uso, sin crear
+   la cuenta.
+3. Given que el cliente fue creado, When el entrenador necesita comunicarle el
+   acceso, Then el sistema muestra la contraseña inicial una sola vez en pantalla
+   (no se reenvía ni se guarda en texto plano) para que el entrenador se la
+   comparta manualmente (mismo canal que usa hoy, WhatsApp).
+
+**Estado:** ⬜ No iniciado.
 
 ---
 
@@ -207,7 +243,36 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 
 ---
 
-## HU-04 a HU-20
+## HU-04 — Agenda de valoraciones
+
+> **Nota de alcance (decidida al planificar Sprint 2):** el documento original
+> tiene una contradicción — `1.2.2.1` no incluye "Agenda de valoraciones" en el
+> MVP, pero `1.2.2.2` la excluye explícitamente, mientras que la tabla MoSCoW
+> (`3.1`) la marca como `Must`. Se decide **priorizarla en el MVP** porque el
+> entrenador ya agenda valoraciones verbalmente con sus clientes — automatizar
+> esto desde el inicio entrega valor real inmediato, en vez de mantener un
+> proceso manual que la plataforma ya podría resolver.
+
+> **Duración estándar de valoración (confirmada con el entrenador):** la
+> valoración real toma ~10 minutos, pero se define la duración estándar del
+> sistema en **15 minutos** — colchón intencional de 5 minutos para absorber
+> imprevistos (retrasos del cliente, mediciones que toman más tiempo) sin que
+> se acumule atraso en las citas siguientes del día.
+
+> **Pendiente técnico para HU-05:** `CitaAgenda` se migra sin relación hacia
+> `Valoracion` (ese modelo aún no existe, sus campos dependen de confirmación
+> pendiente con el entrenador). Cuando se implemente HU-05, agregar
+> `valoracion Valoracion?` a `CitaAgenda` y el lado inverso correspondiente,
+> requiriendo una migración adicional.
+
+**Estado:** 🔶 En progreso — lógica de negocio completa y probada
+(`AgendaService`, `AgendaRepository`, 7/7 pruebas unitarias). Server action
+`agendarAction` implementada. Pendiente: server action `reagendarAction`,
+`cancelarAction`, y toda la UI (formulario + vista de calendario, criterio 5).
+
+---
+
+## HU-05 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada

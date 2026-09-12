@@ -236,6 +236,52 @@ archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
 
+### HU-04 — Agenda de valoraciones
+
+**Estado:** 🔶 En progreso — lógica de negocio completa, UI pendiente para la
+próxima sesión.
+
+**Archivos:**
+- `prisma/schema.prisma` — modelo `CitaAgenda` migrado (colchón de 15 min,
+  tracking de reagendamiento con `fechaInicioOriginal`)
+- `src/lib/agenda/agendaRepository.ts` — `AgendaRepository`, detección de
+  cruces vía `cliente: { entrenadorId }` (sin desnormalizar, decisión consciente
+  dado el volumen bajo de datos esperado)
+- `src/lib/agenda/agendaService.ts` — `agendar()` y `reagendar()`, con
+  validación zod y las reglas de negocio de HU-04
+- `src/app/agenda/actions.ts` — `agendarAction` (server action)
+- `tests/agenda.test.ts` — 7/7 pruebas unitarias
+
+**Pruebas:** 7/7 ✅ — cubren cálculo de fechaFin, detección de cruces, campos
+obligatorios, fecha en el pasado, reagendamiento con tracking de fecha original,
+y que una cita no choque consigo misma al revalidar cruces.
+
+**Criterios de aceptación cubiertos por la lógica (pendiente verificación
+manual en navegador):**
+1. ✅ Calcula fechaFin automáticamente (15 min de colchón)
+2. ✅ Rechaza cruces de horario (a nivel de todo el entrenador, no solo del cliente)
+3. ✅ Valida campos obligatorios
+4. ✅ Rechaza fechas en el pasado
+5. ⬜ Vista de calendario — pendiente, es UI
+6. ✅ Reagendar revalida cruces (excluyendo la propia cita)
+7. ⬜ Cancelar — pendiente en el servicio y su server action
+
+**Decisiones de diseño documentadas en `BackLog.md`:**
+- HU-04 se prioriza en el MVP a pesar de la contradicción del documento
+  original, porque el entrenador ya agenda verbalmente
+- Duración estándar de 15 min (10 min reales + colchón de 5 min)
+- Reagendamiento guarda la fecha original solo la primera vez (no en
+  reagendamientos sucesivos)
+- Cruces de horario se verifican con `JOIN` vía `cliente.entrenadorId`, sin
+  desnormalizar el campo — decisión revisada y confirmada dado el volumen bajo
+  de datos esperado (se descartó una optimización prematura)
+
+**Pendiente para la próxima sesión:**
+- `reagendarAction` y `cancelarAction` (server actions)
+- Formulario para agendar una cita
+- Vista de calendario (día/semana/mes) — criterio 5, la pieza de UI más grande
+- Verificación manual completa contra Supabase real
+
 ## Sprints 2 a 5
 
 No iniciados. Se documentarán con el mismo formato (archivos, tabla de pruebas por
