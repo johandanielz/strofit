@@ -45,7 +45,7 @@ function makeUserSyncRepo(seed: SyncedUser[] = []): UserSyncRepository {
 
 function makeFakeClienteRepo(): ClienteRepository {
     return {
-        async crearParaUsuario(userId) {
+        async crearParaUsuario(userId, datos) {
             return { id: 'cliente-fake-1', entrenadorId: 'entrenador-fake-1' };
         },
     };
@@ -129,12 +129,14 @@ describe('HU-01 / HU-03: AuthService.login', () => {
     });
 });
 
-describe('HU-02: AuthService.register', () => {
+describe('HU-02b: AuthService.register (alta de cliente por el entrenador)', () => {
     const validInput = {
         nombre: 'Ana Torres',
         email: 'ana@strofit.com',
         telefono: '3001234567',
-        password: 'Clave123',
+        sexo: 'FEMENINO' as const,
+        fechaNacimiento: '1995-05-20',
+        factorActividad: 1.375,
     };
 
     function extendFakeAuthProvider(): AuthProvider {
@@ -152,8 +154,8 @@ describe('HU-02: AuthService.register', () => {
         };
     }
 
-    // Criterio 1: datos válidos -> crea la cuenta con rol Cliente
-    test('datos válidos registran al cliente y crean su fila en Cliente', async () => {
+    // Criterio 1: datos válidos -> crea la cuenta con rol Cliente y devuelve una contraseña generada
+    test('datos válidos registran al cliente, crean su fila en Cliente y devuelven una contraseña generada', async () => {
         const authProvider = extendFakeAuthProvider();
         const clienteRepo = makeFakeClienteRepo();
         const crearSpy = jest.spyOn(clienteRepo, 'crearParaUsuario');
@@ -164,8 +166,12 @@ describe('HU-02: AuthService.register', () => {
         expect(result.ok).toBe(true);
         if (result.ok) {
             expect(result.user.rol).toBe('CLIENTE');
+            expect(result.passwordInicial).toHaveLength(10);
         }
-        expect(crearSpy).toHaveBeenCalled();
+        expect(crearSpy).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ sexo: 'FEMENINO', factorActividad: 1.375 })
+        );
     });
 
     // Criterio 2: email ya registrado
@@ -186,8 +192,8 @@ describe('HU-02: AuthService.register', () => {
         if (!result.ok) expect(result.code).toBe('EMAIL_IN_USE');
     });
 
-    // Criterio 3: campo obligatorio vacío
-    test.each(['nombre', 'email', 'telefono', 'password'] as const)(
+    // Campos obligatorios
+    test.each(['nombre', 'email', 'telefono'] as const)(
         'rechaza el registro si falta el campo obligatorio "%s"',
         async (field) => {
             const authProvider = extendFakeAuthProvider();
@@ -201,7 +207,6 @@ describe('HU-02: AuthService.register', () => {
         }
     );
 
-    // Criterio 4: email con formato inválido
     test('rechaza un email con formato inválido', async () => {
         const authProvider = extendFakeAuthProvider();
         const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
@@ -212,7 +217,6 @@ describe('HU-02: AuthService.register', () => {
         if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
     });
 
-    // Criterio 5: teléfono con formato inválido
     test('rechaza un teléfono con letras o longitud incorrecta', async () => {
         const authProvider = extendFakeAuthProvider();
         const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
@@ -223,18 +227,28 @@ describe('HU-02: AuthService.register', () => {
         if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
     });
 
-    // Criterio 6: password que no cumple requisitos mínimos
-    test('rechaza una contraseña que no cumple los requisitos mínimos', async () => {
+    // Nuevo: factor de actividad debe ser uno de los 5 valores válidos
+    test('rechaza un factor de actividad que no está en la lista permitida', async () => {
         const authProvider = extendFakeAuthProvider();
         const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
 
-        const result = await service.register({ ...validInput, password: '123' });
+        const result = await service.register({ ...validInput, factorActividad: 1.4 });
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
     });
 
-    // Nuevo: sin entrenador disponible (decisión de diseño de hoy)
+    // Nuevo: sexo debe ser uno de los dos valores válidos
+    test('rechaza un sexo con valor inválido', async () => {
+        const authProvider = extendFakeAuthProvider();
+        const service = new AuthService(authProvider, makeUserSyncRepo(), makeFakeClienteRepo());
+
+        const result = await service.register({ ...validInput, sexo: 'OTRO' });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
+    });
+
     test('si no hay entrenador disponible, el registro falla explícitamente', async () => {
         const authProvider = extendFakeAuthProvider();
         const clienteRepoSinEntrenador: ClienteRepository = {
