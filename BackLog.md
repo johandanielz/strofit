@@ -16,17 +16,19 @@
 
 ## Índice de historias
 
-| ID     | Historia                                            | MoSCoW | Sprint | Estado        |
-|--------|------------------------------------------------------|--------|--------|----------------|
-| HU-21  | Modelo de datos base (Prisma schema completo)        | Must   | 1      | Implementado (parcial) |
-| HU-22  | Sincronización de usuarios con Supabase Auth         | Must   | 1      | Completado     |
-| HU-01  | Login del entrenador                                  | Must   | 1      | Completado     |
-| HU-01b | Cerrar sesión                                         | Must   | 1      | Completado    |
-| HU-02  | Registro de cliente                                   | Must   | 1      | Reemplazada    |
-| HU-02b  | Alta de cliente por el entrenador                    | Must   | 1      | No iniciado    |
-| HU-03  | Login del cliente                                     | Must   | 1      | Completado     |
-| HU-04  | Agenda de valoraciones                                | Must   | 2      | En progreso    |
-| HU-05  | Registro de valoración física                         | Must   | 2      | No iniciado    |
+| ID     | Historia                                               | MoSCoW | Sprint | Estado         |
+|--------|--------------------------------------------------------|--------|--------|----------------|
+| HU-21  | Modelo de datos base (Prisma schema completo)          | Must   | 1      | Implementado (parcial) |
+| HU-22  | Sincronización de usuarios con Supabase Auth           | Must   | 1      | Completado     |
+| HU-01  | Login del entrenador                                   | Must   | 1      | Completado     |
+| HU-01b | Cerrar sesión                                          | Must   | 1      | Completado     |
+| HU-02  | Registro de cliente                                    | Must   | 1      | Reemplazada    |
+| HU-02b  | Alta de cliente por el entrenador                     | Must   | 1      | Implementado (parcial) |
+| HU-02c  | Cambiar contraseña (usuario autenticado)              | Must   | 1      | No iniciado    |
+| HU-02d  | Restablecer contraseña olvidada                       | Must   | 1      | No iniciado    |
+| HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
+| HU-04  | Agenda de valoraciones                                 | Must   | 2      | En progreso    |
+| HU-05  | Registro de valoración física                          | Must   | 2      | No iniciado    |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
@@ -35,13 +37,13 @@
 | HU-11  | Visualización del entrenamiento (cliente)              | Must   | 3      | No iniciado    |
 | HU-12  | Registro de series ejecutadas                          | Should | 3      | No iniciado    |
 | HU-13  | Video de referencia del ejercicio                      | Could  | 3      | No iniciado    |
-| HU-14  | Creación de plan de alimentación mensual                | Must   | 4      | No iniciado    |
-| HU-15  | Visualización del plan alimenticio + lista de compras   | Must   | 4      | No iniciado    |
-| HU-16  | Informe de planes alimenticios                          | Should | 4      | No iniciado    |
-| HU-17  | Notificación: valoración agendada                       | Could  | 5      | No iniciado    |
-| HU-18  | Notificación: valoración realizada                      | Could  | 5      | No iniciado    |
-| HU-19  | Notificación: plan de entrenamiento asignado             | Could  | 5      | No iniciado    |
-| HU-20  | Notificación: guía alimenticia creada                   | Could  | 5      | No iniciado    |
+| HU-14  | Creación de plan de alimentación mensual               | Must   | 4      | No iniciado    |
+| HU-15  | Visualización del plan alimenticio + lista de compras  | Must   | 4      | No iniciado    |
+| HU-16  | Informe de planes alimenticios                         | Should | 4      | No iniciado    |
+| HU-17  | Notificación: valoración agendada                      | Could  | 5      | No iniciado    |
+| HU-18  | Notificación: valoración realizada                     | Could  | 5      | No iniciado    |
+| HU-19  | Notificación: plan de entrenamiento asignado           | Could  | 5      | No iniciado    |
+| HU-20  | Notificación: guía alimenticia creada                  | Could  | 5      | No iniciado    |
 
 ---
 
@@ -226,6 +228,55 @@ link de registro se asocie sin mi conocimiento.
    acceso, Then el sistema muestra la contraseña inicial una sola vez en pantalla
    (no se reenvía ni se guarda en texto plano) para que el entrenador se la
    comparta manualmente (mismo canal que usa hoy, WhatsApp).
+
+**Estado:** 🔶 Implementado (parcial) — flujo completo funcionando y verificado
+contra Supabase real (creación de User + Cliente con sexo/fechaNacimiento/
+factorActividad, contraseña generada mostrada una sola vez, login del cliente
+con esa contraseña verificado). Pendiente: pruebas unitarias específicas de
+la server action/UI (se reutilizan las 10 de `AuthService.register` ya
+existentes).
+
+---
+
+## HU-02c — Cambiar contraseña (usuario autenticado) *(nueva)*
+
+**Como** cualquier usuario autenticado, **quiero** poder cambiar mi contraseña
+**para** dejar de usar la contraseña generada automáticamente si lo prefiero.
+
+**Descubierta al probar HU-02b**: como la contraseña inicial la genera el
+sistema (compleja, no elegida por el cliente), es razonable que quiera
+cambiarla por una que recuerde más fácil.
+
+**Criterios de aceptación (borrador):**
+1. Given que el usuario está autenticado, When accede a "Cambiar contraseña"
+   e ingresa su contraseña actual y una nueva que cumpla los requisitos
+   mínimos, Then el sistema actualiza la contraseña en Supabase Auth.
+
+**Estado:** ⬜ No iniciado.
+
+---
+
+## HU-02d — Restablecer contraseña olvidada *(nueva)*
+
+**Como** usuario que olvidó su contraseña, **quiero** poder restablecerla sin
+depender del entrenador **para** recuperar acceso a mi cuenta de forma
+autónoma.
+
+**Descubierta al probar HU-02b**: la contraseña generada es compleja
+(10 caracteres aleatorios) — es razonable esperar que algunos clientes la
+olviden con el tiempo.
+
+**Criterios de aceptación (borrador):**
+1. Given que el usuario olvidó su contraseña, When solicita "Olvidé mi
+   contraseña" desde `/login` e ingresa su email, Then el sistema envía un
+   link de restablecimiento (usa el flujo nativo de Supabase Auth,
+   `resetPasswordForEmail`).
+
+**Nota técnica:** este flujo sí requiere que el envío de correos esté
+configurado en Supabase (a diferencia del registro por invitación que
+descartamos, este es más simple porque Supabase Auth ya incluye plantillas
+de email por defecto — no necesita infraestructura propia de correo
+transaccional).
 
 **Estado:** ⬜ No iniciado.
 
