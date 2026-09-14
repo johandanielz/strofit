@@ -64,7 +64,8 @@ model Cliente {
   factorActividad Float
   deletedAt       DateTime?
 
-  citasAgenda CitaAgenda[]
+  citasAgenda  CitaAgenda[]
+  valoraciones Valoracion[]
 
   @@index([entrenadorId])
   @@index([deletedAt])
@@ -84,5 +85,69 @@ model CitaAgenda {
   createdAt           DateTime  @default(now())
   deletedAt           DateTime?
 
+  valoracion Valoracion?
+
   @@index([clienteId, fechaInicio])
+}
+
+model Valoracion {
+  id           String      @id @default(uuid())
+  clienteId    String
+  cliente      Cliente     @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  citaAgendaId String?     @unique
+  citaAgenda   CitaAgenda? @relation(fields: [citaAgendaId], references: [id], onDelete: Restrict)
+  fecha        DateTime    @default(now())
+  peso         Float
+
+  // Pliegues (mm) - los 7 marcados entran en la fórmula Jackson & Pollock
+  pliegueEscapular     Float // = Subescapular
+  pliegueTricipital    Float // = Tríceps
+  pliegueBicipital     Float // no entra en la fórmula
+  pliegueEctoral       Float // = Pectoral
+  pliegueAxial         Float // = Axilar medio
+  pliegueSuprailico    Float // = Suprailiaco
+  pliegueAbdominal     Float // = Abdominal
+  pliegueEnPierna      Float // = Muslo
+  pliegueEnPantorrilla Float // no entra en la fórmula
+
+  // Medidas (cm)
+  cuello               Float
+  brazoIzquierdo       Float
+  brazoDerecho         Float
+  hombros              Float
+  pecho                Float
+  antebrazoIzquierdo   Float
+  antebrazoDerecho     Float
+  cintura              Float
+  abdomen              Float
+  absBajo              Float
+  cadera               Float
+  piernaAltaIzquierda  Float
+  piernaAltaDerecha    Float
+  piernaIzquierda      Float
+  piernaDerecha        Float
+  piernaBajaIzquierda  Float
+  piernaBajaDerecha    Float
+  pantorrillaIzquierda Float
+  pantorrillaDerecha   Float
+
+  // Punto crítico (opcional)
+  puntoCriticoNombre String?
+  puntoCriticoMedida Float?
+
+  // Calculados y guardados (snapshot del momento)
+  suma7Pliegues    Float
+  densidadCorporal Float
+  porcentajeGrasa  Float
+  masaGrasa        Float
+  masaLibreGrasa   Float
+  imc              Float
+  caloriasBasales  Float
+  factorActividad  Float // snapshot del Cliente.factorActividad en este momento
+  caloriasTeoricas Float // basales x factorActividad
+
+  deletedAt DateTime?
+
+  @@index([clienteId, fecha])
+  @@index([deletedAt])
 }
