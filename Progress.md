@@ -13,7 +13,7 @@
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
-| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 1/6 (HU-04 en progreso) | — | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 2/6 (HU-04 y HU-05 en progreso) | 13/13 | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -336,6 +336,61 @@ manual en navegador):**
 - Formulario para agendar una cita
 - Vista de calendario (día/semana/mes) — criterio 5, la pieza de UI más grande
 - Verificación manual completa contra Supabase real
+
+### HU-05 — Registro de valoración física
+
+**Estado:** 🔶 En progreso — lógica de negocio completa y validada, UI
+pendiente.
+
+**Archivos:**
+- `prisma/schema.prisma` — modelo `Valoracion` migrado (46 columnas:
+  pliegues, medidas con lado izq/der, punto crítico, calculados)
+- `src/lib/valoracion/calculoValoracion.ts` — función pura, fórmulas
+  Jackson & Pollock (% grasa) y Cunningham (calorías basales)
+- `src/lib/valoracion/valoracionRepository.ts` — `crear()` usa
+  `prisma.$transaction` para marcar la `CitaAgenda` como `realizada`
+  atómicamente junto con la creación de la valoración
+- `src/lib/valoracion/valoracionService.ts` — orquesta validación,
+  resuelve altura sugerida, calcula y guarda
+- `tests/calculoValoracion.test.ts` — 7/7 pruebas
+- `tests/valoracion.test.ts` — 6/6 pruebas
+
+**Pruebas:** 13/13 ✅ — incluye validación contra datos **reales** del
+Excel del entrenador (Σ7=178mm, edad=27, peso=98.15kg → %grasa=24.04%,
+coincide exactamente con el cálculo manual de Juan Pablo).
+
+**Hallazgo importante:** el "ejemplo práctico" de la imagen de referencia
+(hombre 30 años, 80kg, Σ7=100mm → DC≈1.0665) no coincide exactamente con
+la fórmula aplicada con precisión completa (da DC=1.0653532) — se
+determinó que el ejemplo de la imagen tenía redondeo intermedio, y se
+confió en la fórmula exacta, validada independientemente contra datos
+reales del Excel.
+
+**Decisiones de diseño:**
+- Campos calculados se guardan como "snapshot" en el momento de la
+  valoración (no se recalculan al consultar el historial), pero se
+  recalculan si esa valoración específica se edita — evita
+  recalcular contra datos que ya no representan ese momento
+- `altura` vive en `Valoracion` (no en `Cliente`), con `factorActividad`
+  también como snapshot — ambos pueden cambiar con el tiempo
+- Primera valoración de un cliente: `altura` es obligatoria. Valoraciones
+  siguientes: si no se envía, el backend usa la de la última valoración
+  (red de seguridad) — la UI (pendiente) debe pre-llenar el campo para
+  que el entrenador nunca vea un campo vacío que se llena "mágicamente"
+- Pliegues: 9 se registran (incluye bicipital y pantorrilla), solo 7
+  entran en la fórmula oficial — mapeo confirmado con el entrenador
+- Medidas con lado izquierdo/derecho: brazo, antebrazo, pierna alta,
+  pierna, pierna baja, pantorrilla (7 pares) — confirmado con el
+  entrenador, incluida la corrección de pantorrilla (inicialmente un
+  solo campo, corregido tras confirmar con Juan Pablo)
+- Punto crítico: dos campos separados (nombre + medida), no texto libre
+  combinado — decisión para facilitar análisis futuro
+
+**Pendiente:**
+- Formulario de registro (el más grande del proyecto, ~30 campos)
+- Verificación manual completa contra Supabase real
+- Conectar con HU-04: al registrar desde una cita, confirmar que se
+  marca como `realizada` correctamente en el navegador
 
 ## Sprints 2 a 5
 
