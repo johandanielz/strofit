@@ -1,7 +1,10 @@
 import { prisma } from '../db';
 
 export interface ClienteRepository {
-    crearParaUsuario(userId: string): Promise<{ id: string; entrenadorId: string }>;
+    crearParaUsuario(
+        userId: string,
+        datos: { sexo: 'MASCULINO' | 'FEMENINO'; fechaNacimiento: Date; factorActividad: number }
+    ): Promise<{ id: string; entrenadorId: string }>;
 }
 
 export class NoHayEntrenadorError extends Error {
@@ -11,7 +14,7 @@ export class NoHayEntrenadorError extends Error {
 }
 
 export const prismaClienteRepository: ClienteRepository = {
-    async crearParaUsuario(userId) {
+    async crearParaUsuario(userId, datos) {
         const entrenador = await prisma.entrenador.findFirst();
 
         if (!entrenador) {
@@ -22,6 +25,9 @@ export const prismaClienteRepository: ClienteRepository = {
             data: {
                 userId,
                 entrenadorId: entrenador.id,
+                sexo: datos.sexo,
+                fechaNacimiento: datos.fechaNacimiento,
+                factorActividad: datos.factorActividad,
             },
         });
     },

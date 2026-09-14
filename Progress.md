@@ -12,8 +12,8 @@
 
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
-| 1      | Autenticación y arquitectura base | 5 (HU-21,22,01,02,03) | 5/5 | 19/19 ✅ | — |
-| 2      | Valoraciones físicas            | 6 | 0/6 | — | — |
+| 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 1/6 (HU-04 en progreso) | — | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -177,10 +177,16 @@ validación de aspect-ratio de `next/image` cuando se pasan `width`/`height` fij
 se resolvió con un `style` inline explícito en el logo del login
 (`src/app/login/page.tsx`), que tiene prioridad sobre las clases de Tailwind.
 
-### HU-02 — Registro de cliente
+### HU-02 — Registro de cliente (reemplazada por HU-02b)
 
-**Estado:** ✅ Completado — 6/6 criterios verificados en navegador, 10/10 pruebas
-unitarias de `AuthService.register`. Suite completa: 19/19.
+**Estado:** 🔶 Reemplazada — ver HU-02b. La lógica de `AuthService.register()`
+se mantuvo y se extendió, pero el flujo público (`/register`) fue eliminado
+por la preocupación de seguridad documentada en `BackLog.md`.
+
+**Nota histórica:** esta sección documenta la implementación original (público,
+sin los campos de perfil) tal como se construyó y verificó en su momento —
+se conserva como registro de cómo evolucionó el diseño, no como estado actual.
+Ver HU-02b arriba para el estado y archivos vigentes.
 
 **Archivos:**
 - `src/lib/auth/clienteRepository.ts` — `ClienteRepository`, `findFirst()` para
@@ -228,6 +234,55 @@ sprint de hardening.
    action antes del redirect a `/login`. Sin este ajuste, `proxy.ts` (de HU-01,
    criterio 5) redirigía al dashboard en vez de mostrar el login.
 
+### HU-02b — Alta de cliente por el entrenador
+
+**Estado:** 🔶 Implementado (parcial) — verificado manualmente en navegador
+contra Supabase real, sin pruebas unitarias nuevas dedicadas (se reutilizan
+y actualizaron las 10 de `AuthService.register`).
+
+**Archivos:**
+- `src/lib/auth/clienteRepository.ts` — `crearParaUsuario` extendido con
+  `sexo`, `fechaNacimiento`, `factorActividad`
+- `src/lib/auth/authService.ts` — `register()` ya no recibe password, genera
+  una con `passwordGenerator.ts`
+- `src/lib/auth/passwordGenerator.ts` — nuevo, genera contraseña de 10
+  caracteres sin ambigüedad visual (excluye 0/O, 1/l/I)
+- `src/lib/validation/schemas.ts` — `altaClienteInputSchema`, `sexoSchema`,
+  `fechaNacimientoSchema`, `factorActividadSchema`
+- `src/lib/valoracion/factorActividad.ts` — constante con los 5 niveles
+  válidos (valor numérico usado directo en fórmulas + etiqueta legible)
+- `prisma/schema.prisma` — `Cliente` extendido con `sexo` (enum),
+  `fechaNacimiento`, `factorActividad`
+- `src/app/(app)/clientes/` — `actions.ts`, `AltaClienteForm.tsx`, `page.tsx`
+- `tests/auth-login.test.ts` — bloque de HU-02 reemplazado por HU-02b,
+  10 pruebas (2 nuevas: factor de actividad inválido, sexo inválido)
+
+**Verificación manual contra Supabase real:**
+- ✅ Formulario completo → cliente creado en `User` y `Cliente` con todos
+  los campos nuevos correctos
+- ✅ Contraseña generada se muestra una sola vez en pantalla
+- ✅ El cliente creado puede iniciar sesión con esa contraseña y es
+  redirigido a `/mi-progreso` (no `/dashboard`, confirma que `User.rol`
+  funciona correctamente)
+
+**Origen de esta HU:** surgió al revisar con el entrenador los datos reales
+de valoración física para HU-05 (ver `BackLog.md` → HU-02 para el detalle
+completo de la decisión y las opciones consideradas).
+
+**Decisión relacionada tomada hoy:** `/register` (registro público) se
+eliminó completamente — la carpeta `src/app/register/` ya no existe.
+
+**Nuevas historias descubiertas al verificar el login del cliente:**
+- **HU-02c** (cambiar contraseña) y **HU-02d** (restablecer contraseña
+  olvidada) — surgieron al notar que la contraseña generada es compleja y el
+  cliente no tiene forma de cambiarla ni recuperarla si la olvida. Ninguna
+  implementada todavía.
+
+**Hallazgo técnico:** borrar `.next/` (necesario tras eliminar una ruta)
+deja temporalmente sin generar los tipos de Next.js (`LayoutProps`, etc.) —
+`npx tsc --noEmit` falla hasta que se corre `npm run dev` una vez para que
+Next.js los regenere.
+
 ### HU-03 — Login del cliente
 **Estado:** ✅ Completado — cubierta por la misma implementación de HU-01
 (`AuthService.login` no distingue rol al autenticar; el redirect sí varía según
@@ -235,6 +290,52 @@ sprint de hardening.
 archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
+
+### HU-04 — Agenda de valoraciones
+
+**Estado:** 🔶 En progreso — lógica de negocio completa, UI pendiente para la
+próxima sesión.
+
+**Archivos:**
+- `prisma/schema.prisma` — modelo `CitaAgenda` migrado (colchón de 15 min,
+  tracking de reagendamiento con `fechaInicioOriginal`)
+- `src/lib/agenda/agendaRepository.ts` — `AgendaRepository`, detección de
+  cruces vía `cliente: { entrenadorId }` (sin desnormalizar, decisión consciente
+  dado el volumen bajo de datos esperado)
+- `src/lib/agenda/agendaService.ts` — `agendar()` y `reagendar()`, con
+  validación zod y las reglas de negocio de HU-04
+- `src/app/agenda/actions.ts` — `agendarAction` (server action)
+- `tests/agenda.test.ts` — 7/7 pruebas unitarias
+
+**Pruebas:** 7/7 ✅ — cubren cálculo de fechaFin, detección de cruces, campos
+obligatorios, fecha en el pasado, reagendamiento con tracking de fecha original,
+y que una cita no choque consigo misma al revalidar cruces.
+
+**Criterios de aceptación cubiertos por la lógica (pendiente verificación
+manual en navegador):**
+1. ✅ Calcula fechaFin automáticamente (15 min de colchón)
+2. ✅ Rechaza cruces de horario (a nivel de todo el entrenador, no solo del cliente)
+3. ✅ Valida campos obligatorios
+4. ✅ Rechaza fechas en el pasado
+5. ⬜ Vista de calendario — pendiente, es UI
+6. ✅ Reagendar revalida cruces (excluyendo la propia cita)
+7. ⬜ Cancelar — pendiente en el servicio y su server action
+
+**Decisiones de diseño documentadas en `BackLog.md`:**
+- HU-04 se prioriza en el MVP a pesar de la contradicción del documento
+  original, porque el entrenador ya agenda verbalmente
+- Duración estándar de 15 min (10 min reales + colchón de 5 min)
+- Reagendamiento guarda la fecha original solo la primera vez (no en
+  reagendamientos sucesivos)
+- Cruces de horario se verifican con `JOIN` vía `cliente.entrenadorId`, sin
+  desnormalizar el campo — decisión revisada y confirmada dado el volumen bajo
+  de datos esperado (se descartó una optimización prematura)
+
+**Pendiente para la próxima sesión:**
+- `reagendarAction` y `cancelarAction` (server actions)
+- Formulario para agendar una cita
+- Vista de calendario (día/semana/mes) — criterio 5, la pieza de UI más grande
+- Verificación manual completa contra Supabase real
 
 ## Sprints 2 a 5
 

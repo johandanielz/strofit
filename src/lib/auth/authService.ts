@@ -1,7 +1,8 @@
-import { validate, loginInputSchema, registerInputSchema } from '../validation/schemas';
+import { validate, loginInputSchema, altaClienteInputSchema } from '../validation/schemas';
 import { AuthProvider, InvalidCredentialsError, EmailInUseError } from './authProvider';
 import { syncSupabaseUser, UserSyncRepository } from './syncUser';
 import { ClienteRepository, NoHayEntrenadorError } from './clienteRepository';
+import { generarPasswordInicial } from './passwordGenerator';
 
 export type LoginResult =
     | { ok: true; user: { id: string; rol: 'ENTRENADOR' | 'CLIENTE' } }
@@ -10,7 +11,7 @@ export type LoginResult =
     | { ok: false; code: 'CUENTA_DESACTIVADA' };
 
 export type RegisterResult =
-    | { ok: true; user: { id: string; rol: 'CLIENTE' } }
+    | { ok: true; user: { id: string; rol: 'CLIENTE' }; passwordInicial: string }
     | { ok: false; code: 'VALIDATION_ERROR'; errors: string[] }
     | { ok: false; code: 'EMAIL_IN_USE' }
     | { ok: false; code: 'SIN_ENTRENADOR_DISPONIBLE' };
@@ -48,14 +49,20 @@ export class AuthService {
     }
 
     async register(input: unknown): Promise<RegisterResult> {
-        const parsed = validate(registerInputSchema, input);
+        const parsed = altaClienteInputSchema.safeParse(input);
         if (!parsed.success) {
-            return { ok: false, code: 'VALIDATION_ERROR', errors: parsed.errors };
+            return {
+                ok: false,
+                code: 'VALIDATION_ERROR',
+                errors: parsed.error.issues.map((i) => i.message),
+            };
         }
+
+        const passwordInicial = generarPasswordInicial();
 
         let authUser;
         try {
-            authUser = await this.authProvider.signUp(parsed.data.email, parsed.data.password, {
+            authUser = await this.authProvider.signUp(parsed.data.email, passwordInicial, {
                 rol: 'CLIENTE',
                 nombre: parsed.data.nombre,
                 telefono: parsed.data.telefono,
@@ -69,12 +76,15 @@ export class AuthService {
 
         const syncResult = await syncSupabaseUser(authUser, this.userSyncRepo);
         if (syncResult.status === 'CUENTA_DESACTIVADA') {
-            // No debería pasar nunca en un registro nuevo, pero TypeScript exige el chequeo.
             return { ok: false, code: 'EMAIL_IN_USE' };
         }
 
         try {
-            await this.clienteRepo.crearParaUsuario(syncResult.user.id);
+            await this.clienteRepo.crearParaUsuario(syncResult.user.id, {
+                sexo: parsed.data.sexo,
+                fechaNacimiento: parsed.data.fechaNacimiento,
+                factorActividad: parsed.data.factorActividad,
+            });
         } catch (e) {
             if (e instanceof NoHayEntrenadorError) {
                 return { ok: false, code: 'SIN_ENTRENADOR_DISPONIBLE' };
@@ -82,6 +92,6 @@ export class AuthService {
             throw e;
         }
 
-        return { ok: true, user: { id: syncResult.user.id, rol: 'CLIENTE' } };
+        return { ok: true, user: { id: syncResult.user.id, rol: 'CLIENTE' }, passwordInicial };
     }
 }

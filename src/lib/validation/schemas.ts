@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VALORES_FACTOR_ACTIVIDAD } from '../valoracion/factorActividad';
 
 /**
  * Reglas de validación centralizadas. Se usan tanto en el formulario (cliente)
@@ -56,3 +57,31 @@ export function validate<T>(
     }
     return { success: false, errors: result.error.issues.map((i) => i.message) };
 }
+
+export const sexoSchema = z.enum(['MASCULINO', 'FEMENINO'], {
+    error: () => 'El sexo es obligatorio',
+});
+
+export const fechaNacimientoSchema = z.coerce.date({
+    error: (issue) =>
+        issue.input === undefined
+            ? 'La fecha de nacimiento es obligatoria'
+            : 'La fecha de nacimiento no es válida',
+});
+
+export const factorActividadSchema = z
+    .coerce.number()
+    .refine((v) => (VALORES_FACTOR_ACTIVIDAD as readonly number[]).includes(v), {
+        message: 'El factor de actividad no es válido',
+    });
+
+export const altaClienteInputSchema = z.object({
+    nombre: nombreSchema,
+    email: emailSchema,
+    telefono: telefonoSchema,
+    sexo: sexoSchema,
+    fechaNacimiento: fechaNacimientoSchema,
+    factorActividad: factorActividadSchema,
+});
+
+export type AltaClienteInput = z.infer<typeof altaClienteInputSchema>;

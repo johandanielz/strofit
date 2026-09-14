@@ -1,20 +1,21 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { AuthService } from '@/lib/auth/authService';
 import { createSupabaseAuthProvider } from '@/lib/auth/supabaseAuthProvider';
 import { prismaUserSyncRepository } from '@/lib/auth/prismaUserSyncRepository';
 import { prismaClienteRepository } from '@/lib/auth/clienteRepository';
 import { createClient } from '@/lib/supabase/server';
 
-export type RegisterActionState = {
+export type AltaClienteActionState = {
     error?: string;
+    passwordGenerada?: string;
+    nombreCliente?: string;
 };
 
-export async function registerAction(
-    prevState: RegisterActionState,
+export async function altaClienteAction(
+    prevState: AltaClienteActionState,
     formData: FormData
-): Promise<RegisterActionState> {
+): Promise<AltaClienteActionState> {
     const supabase = await createClient();
     const authService = new AuthService(
         createSupabaseAuthProvider(supabase),
@@ -26,7 +27,9 @@ export async function registerAction(
         nombre: formData.get('nombre'),
         email: formData.get('email'),
         telefono: formData.get('telefono'),
-        password: formData.get('password'),
+        sexo: formData.get('sexo'),
+        fechaNacimiento: formData.get('fechaNacimiento'),
+        factorActividad: formData.get('factorActividad'),
     });
 
     if (!result.ok) {
@@ -37,15 +40,14 @@ export async function registerAction(
             return { error: 'Ese email ya está registrado' };
         }
         if (result.code === 'SIN_ENTRENADOR_DISPONIBLE') {
-            return { error: 'No es posible registrarse en este momento. Intenta más tarde.' };
+            return { error: 'No es posible crear el cliente en este momento' };
         }
         return {};
     }
 
-    // Supabase crea sesión automáticamente al hacer signUp (con "Confirm email"
-    // desactivado). El registro no debe autenticar a la persona todavía —
-    // cerramos esa sesión explícitamente antes de mandarla al login.
-    await supabase.auth.signOut();
-
-    redirect('/login');
+    // Criterio 3: se muestra una sola vez, no se persiste ni se reenvía.
+    return {
+        passwordGenerada: result.passwordInicial,
+        nombreCliente: formData.get('nombre') as string,
+    };
 }
