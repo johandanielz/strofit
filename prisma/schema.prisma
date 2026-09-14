@@ -98,6 +98,7 @@ model Valoracion {
   citaAgenda   CitaAgenda? @relation(fields: [citaAgendaId], references: [id], onDelete: Restrict)
   fecha        DateTime    @default(now())
   peso         Float
+  altura       Float // en metros, snapshot — se sugiere el valor de la valoración anterior, editable
 
   // Pliegues (mm) - los 7 marcados entran en la fórmula Jackson & Pollock
   pliegueEscapular     Float // = Subescapular
