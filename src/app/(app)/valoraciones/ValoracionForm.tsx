@@ -14,6 +14,14 @@ const inputClass =
     'w-full rounded-md border border-[#E8E6DF] bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-[#7ED321]';
 const labelClass = 'text-sm font-medium text-[#3D3D3A]';
 
+function obtenerFechaLocalHoy(): string {
+    const hoy = new Date();
+    const año = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    return `${año}-${mes}-${dia}`;
+}
+
 export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
     const [state, formAction, isPending] = useActionState(registrarValoracionAction, initialState);
     const [alturaSugerida, setAlturaSugerida] = useState<number | null>(null);
@@ -55,7 +63,7 @@ export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
                             name="fecha"
                             type="date"
                             required
-                            defaultValue={new Date().toISOString().split('T')[0]}
+                            defaultValue={obtenerFechaLocalHoy()}
                             className={inputClass}
                         />
                     </div>
