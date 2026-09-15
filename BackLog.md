@@ -28,7 +28,7 @@
 | HU-02d  | Restablecer contraseña olvidada                       | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                 | Must   | 2      | En progreso    |
-| HU-05  | Registro de valoración física                          | Must   | 2      | No iniciado    |
+| HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
@@ -323,7 +323,54 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 
 ---
 
-## HU-05 a HU-20
+## HU-05 — Registro de valoración física
+
+> **Modelo de datos confirmado con el entrenador (revisando su Excel real):**
+> los pliegues se registran en mm (9 en total: los 7 oficiales de Jackson &
+> Pollock — Pectoral, Axilar medio, Tríceps, Subescapular, Abdominal,
+> Suprailiaco, Muslo — más Bicipital y Pantorrilla, que se registran pero no
+> entran en la fórmula). Las medidas en cm incluyen 7 pares izquierda/derecha
+> (brazo, antebrazo, pierna alta, pierna, pierna baja, pantorrilla) —
+> confirmado explícitamente con el entrenador, incluyendo la corrección de
+> pantorrilla (que inicialmente se modeló como un solo campo).
+
+> **Snapshot vs. recalcular (decisión de arquitectura):** los valores
+> calculados (% grasa, masa grasa, IMC, calorías, etc.) se guardan en el
+> momento de la valoración, no se recalculan al consultar el historial —
+> una valoración es una "fotografía" de un momento específico. Si el
+> entrenador edita una valoración puntual (corrige un dato mal digitado),
+> ahí sí se recalcula esa valoración específica, sin afectar las demás.
+
+> **Altura como campo de `Valoracion`, no de `Cliente`:** puede cambiar con
+> el tiempo (especialmente en clientes menores de edad) — se guarda como
+> snapshot en cada valoración. Es obligatoria en la primera valoración de
+> un cliente; en las siguientes, el sistema la sugiere con el valor de la
+> última valoración registrada (el entrenador puede editarla).
+
+> **Punto crítico (medida extra opcional):** dos campos separados
+> (`puntoCriticoNombre` + `puntoCriticoMedida`), en vez de texto libre
+> combinado — decisión para poder sacar cálculos/analítica sobre esos
+> puntos en el futuro sin tener que parsear texto.
+
+> **Validación de fórmulas contra datos reales:** el "ejemplo práctico" de
+> la imagen de referencia (Jackson & Pollock, hombre 30 años, 80kg,
+> Σ7=100mm) no coincidía exactamente con el cálculo de precisión completa
+> (diferencia de redondeo intermedio en el documento de referencia). Se
+> validó la fórmula, en cambio, contra un caso **real** del Excel del
+> entrenador (Σ7=178mm, edad=27, peso=98.15kg), donde el %grasa calculado
+> (24.04%) coincide exactamente con el que Juan Pablo ya había calculado
+> a mano — mayor confianza que un ejemplo ilustrativo.
+
+**Estado:** ✅ Completado — modelo migrado, fórmulas validadas contra datos
+reales del entrenador y contra un cliente real en el navegador (con dos bugs
+de UX corregidos en el proceso: label ambiguo de fecha, desfase de zona
+horaria). Pendiente único: verificar que una valoración creada desde una
+`CitaAgenda` marca la cita como `realizada` — se prueba junto con el cierre
+de HU-04, cuando exista la UI de calendario para generar ese flujo completo.
+
+---
+
+## HU-06 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada
