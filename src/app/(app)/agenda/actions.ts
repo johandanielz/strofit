@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { AgendaService } from '@/lib/agenda/agendaService';
 import { prismaAgendaRepository } from '@/lib/agenda/agendaRepository';
 import { obtenerEntrenadorIdDeLaSesion } from '@/lib/auth/getEntrenadorId';
+import { prisma } from '@/lib/db';
 
 export type AgendarActionState = {
     error?: string;
@@ -104,4 +105,19 @@ export async function cancelarAction(
 
     revalidatePath('/dashboard/agenda');
     return { success: true };
+}
+
+export async function obtenerSemanaCalendario(fechaInicioSemana: Date) {
+    const entrenadorId = await obtenerEntrenadorIdDeLaSesion();
+    const agendaService = new AgendaService(prismaAgendaRepository);
+    return agendaService.obtenerSemana(entrenadorId, fechaInicioSemana);
+}
+
+export async function obtenerClientesParaAgendar() {
+    const entrenadorId = await obtenerEntrenadorIdDeLaSesion();
+    return prisma.cliente.findMany({
+        where: { entrenadorId, deletedAt: null },
+        select: { id: true, user: { select: { nombre: true } } },
+        orderBy: { user: { nombre: 'asc' } },
+    });
 }
