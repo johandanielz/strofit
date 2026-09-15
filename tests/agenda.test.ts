@@ -43,6 +43,14 @@ function makeFakeAgendaRepo(seed: AgendaCita[] = []): AgendaRepository {
             cita.cancelada = true;
             return cita;
         },
+        async obtenerCitasEnRango(entrenadorId, desde, hasta) {
+            return citas
+                .filter((c) => c.fechaInicio >= desde && c.fechaInicio < hasta)
+                .map((c) => ({
+                    ...c,
+                    cliente: { user: { nombre: 'Cliente de prueba' } },
+                }));
+        },
     };
 }
 

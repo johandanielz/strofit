@@ -12,6 +12,12 @@ export interface AgendaCita {
     fechaInicioOriginal: Date | null;
 }
 
+export interface AgendaCitaConCliente extends AgendaCita {
+    cliente: {
+        user: { nombre: string };
+    };
+}
+
 export interface AgendaRepository {
     existeCruce(
         entrenadorId: string,
@@ -23,6 +29,7 @@ export interface AgendaRepository {
     obtenerPorId(id: string): Promise<AgendaCita | null>;
     reagendar(id: string, nuevaFechaInicio: Date, nuevaFechaFin: Date): Promise<AgendaCita>;
     cancelar(id: string): Promise<AgendaCita>;
+    obtenerCitasEnRango(entrenadorId: string, desde: Date, hasta: Date): Promise<AgendaCitaConCliente[]>;
 }
 
 export const prismaAgendaRepository: AgendaRepository = {
@@ -69,6 +76,18 @@ export const prismaAgendaRepository: AgendaRepository = {
         return prisma.citaAgenda.update({
             where: { id },
             data: { cancelada: true },
+        });
+    },
+
+    async obtenerCitasEnRango(entrenadorId, desde, hasta) {
+        return prisma.citaAgenda.findMany({
+            where: {
+                cliente: { entrenadorId },
+                deletedAt: null,
+                fechaInicio: { gte: desde, lt: hasta },
+            },
+            include: { cliente: { include: { user: true } } },
+            orderBy: { fechaInicio: 'asc' },
         });
     },
 };
