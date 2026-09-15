@@ -49,8 +49,15 @@ export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
                         </select>
                     </div>
                     <div className="space-y-1.5">
-                        <label htmlFor="fecha" className={labelClass}>Fecha</label>
-                        <input id="fecha" name="fecha" type="date" required className={inputClass} />
+                        <label htmlFor="fecha" className={labelClass}>Fecha de la valoración</label>
+                        <input
+                            id="fecha"
+                            name="fecha"
+                            type="date"
+                            required
+                            defaultValue={new Date().toISOString().split('T')[0]}
+                            className={inputClass}
+                        />
                     </div>
                     <div className="space-y-1.5">
                         <label htmlFor="peso" className={labelClass}>Peso (kg)</label>
