@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { agendarAction } from './actions';
 import { useActionState } from 'react';
 
@@ -46,9 +46,9 @@ export function CalendarioSemana({ dias, clientes }: { dias: Dia[]; clientes: Cl
                 <table className="w-full border-collapse text-sm">
                     <thead>
                         <tr>
-                            <th className="border border-[#E8E6DF] p-2 text-left">Hora</th>
+                            <th className="border border-[#E8E6DF] p-2 text-left text-black">Hora</th>
                             {dias.map((dia) => (
-                                <th key={dia.fecha} className="border border-[#E8E6DF] p-2 text-left">
+                                <th key={dia.fecha} className="border border-[#E8E6DF] p-2 text-left text-black">
                                     {NOMBRES_DIA[dia.diaSemana]} {new Date(dia.fecha).getDate()}
                                 </th>
                             ))}
@@ -134,9 +134,11 @@ function ModalAgendar({
     const fechaHoraInicio = new Date(fecha);
     fechaHoraInicio.setHours(h, m, 0, 0);
 
-    if (state.success) {
-        onClose();
-    }
+    useEffect(() => {
+        if (state.success) {
+            onClose();
+        }
+    }, [state.success, onClose]);
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40">
@@ -148,7 +150,7 @@ function ModalAgendar({
                     <input type="hidden" name="fechaInicio" value={fechaHoraInicio.toISOString()} />
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium text-[#3D3D3A]">Cliente</label>
-                        <select name="clienteId" required className="w-full rounded-md border border-[#E8E6DF] px-3 py-2">
+                        <select name="clienteId" required className="w-full rounded-md border border-[#E8E6DF] px-3 py-2 text-black">
                             <option value="">Selecciona…</option>
                             {clientes.map((c) => (
                                 <option key={c.id} value={c.id}>{c.user.nombre}</option>
@@ -157,7 +159,7 @@ function ModalAgendar({
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium text-[#3D3D3A]">Observaciones (opcional)</label>
-                        <textarea name="observaciones" className="w-full rounded-md border border-[#E8E6DF] px-3 py-2" />
+                        <textarea name="observaciones" className="w-full rounded-md border border-[#E8E6DF] px-3 py-2 text-black" />
                     </div>
 
                     {state.error && <p className="text-sm text-red-600">{state.error}</p>}
