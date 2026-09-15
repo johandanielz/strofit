@@ -13,7 +13,7 @@
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
-| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 2/6 (HU-04 y HU-05 en progreso) | 13/13 | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 2/6 (HU-04 en progreso, HU-05 completa) | 20/20 | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -386,11 +386,45 @@ reales del Excel.
 - Punto crítico: dos campos separados (nombre + medida), no texto libre
   combinado — decisión para facilitar análisis futuro
 
-**Pendiente:**
-- Formulario de registro (el más grande del proyecto, ~30 campos)
-- Verificación manual completa contra Supabase real
-- Conectar con HU-04: al registrar desde una cita, confirmar que se
-  marca como `realizada` correctamente en el navegador
+**Estado:** ✅ Completado — verificado en navegador contra Supabase real,
+con un cliente real (`Pepito Perez`), coincidiendo exactamente con los
+cálculos validados a mano.
+
+**Archivos adicionales de esta sesión:**
+- `src/app/(app)/valoraciones/ValoracionForm.tsx` — formulario completo
+  (~30 campos generados desde arrays, no escritos a mano uno por uno)
+- `src/app/(app)/valoraciones/page.tsx` — Server Component, carga clientes
+  antes de renderizar
+- `src/app/(app)/valoraciones/actions.ts` — `registrarValoracionAction`,
+  `obtenerClientesDelEntrenador`, `obtenerAlturaSugerida`
+- `src/lib/auth/getEntrenadorId.ts` — extraído de `agenda/actions.ts` para
+  reutilizar entre HU-04 y HU-05
+
+**Bugs encontrados y corregidos durante la verificación manual (no
+detectables con pruebas unitarias, solo probando en navegador real):**
+1. **Campos opcionales vacíos rotos** — `""` de un input HTML se coerciona a
+   `NaN` con `z.coerce.number()`, fallando `.positive()` aunque el campo
+   fuera opcional. Corregido con `z.preprocess()` que convierte `""` a
+   `undefined` antes de la coerción.
+2. **Label "Fecha" ambiguo** — se confundió con fecha de nacimiento en la
+   primera prueba manual, produciendo una edad negativa y cálculos
+   completamente incorrectos en cascada. Corregido: label →
+   "Fecha de la valoración", pre-llenada con la fecha actual.
+3. **Desfase de zona horaria (UTC vs. Colombia)** — `toISOString()` siempre
+   convierte a UTC; en horas de la tarde/noche en Colombia (UTC-5), esto
+   mostraba la fecha de mañana en vez de hoy. Corregido calculando la fecha
+   local con `getFullYear()/getMonth()/getDate()`, que sí respetan la zona
+   horaria del navegador.
+
+**Verificación final exitosa (cliente real, fecha real):**
+Σ7=178mm, fechaNacimiento=2000-09-13, fecha=2026-09-14 (edad=26) →
+porcentajeGrasa=23.91%, masaGrasa=23.47kg, masaLibreGrasa=74.68kg — todo
+coincide con el cálculo manual de verificación.
+
+**Único pendiente:** verificar que registrar una valoración desde una
+`CitaAgenda` marca esa cita como `realizada` — se prueba junto con el
+cierre de HU-04 en la próxima sesión (necesita la UI de calendario para
+generar el flujo completo de principio a fin).
 
 ## Sprints 2 a 5
 

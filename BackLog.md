@@ -28,7 +28,7 @@
 | HU-02d  | Restablecer contraseña olvidada                       | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                 | Must   | 2      | En progreso    |
-| HU-05  | Registro de valoración física                          | Must   | 2      | Implementado (parcial) |
+| HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
@@ -361,11 +361,12 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 > (24.04%) coincide exactamente con el que Juan Pablo ya había calculado
 > a mano — mayor confianza que un ejemplo ilustrativo.
 
-**Estado:** 🔶 Implementado (parcial) — modelo migrado, fórmulas validadas
-contra datos reales del entrenador, repositorio con transacción, servicio,
-repositorio real de Prisma y server action, todos completos y probados
-(13/13 pruebas unitarias). Pendiente: formulario (UI, ~30 campos) y
-verificación manual contra Supabase real.
+**Estado:** ✅ Completado — modelo migrado, fórmulas validadas contra datos
+reales del entrenador y contra un cliente real en el navegador (con dos bugs
+de UX corregidos en el proceso: label ambiguo de fecha, desfase de zona
+horaria). Pendiente único: verificar que una valoración creada desde una
+`CitaAgenda` marca la cita como `realizada` — se prueba junto con el cierre
+de HU-04, cuando exista la UI de calendario para generar ese flujo completo.
 
 ---
 
