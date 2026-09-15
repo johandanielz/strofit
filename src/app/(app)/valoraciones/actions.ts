@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { ValoracionService } from '@/lib/valoracion/valoracionService';
 import { prismaValoracionRepository } from '@/lib/valoracion/valoracionRepository';
 import { prismaClienteRepositoryParaValoracion } from '@/lib/valoracion/prismaClienteRepositoryParaValoracion';
+import { obtenerEntrenadorIdDeLaSesion } from '@/lib/auth/getEntrenadorId';
+import { prisma } from '@/lib/db';
 
 export type RegistrarValoracionActionState = {
     error?: string;
@@ -39,4 +41,24 @@ export async function registrarValoracionAction(
 
     revalidatePath('/dashboard/clientes');
     return { success: true };
+}
+
+export async function obtenerClientesDelEntrenador() {
+    const entrenadorId = await obtenerEntrenadorIdDeLaSesion();
+
+    return prisma.cliente.findMany({
+        where: { entrenadorId, deletedAt: null },
+        select: { id: true, user: { select: { nombre: true } } },
+        orderBy: { user: { nombre: 'asc' } },
+    });
+}
+
+export async function obtenerAlturaSugerida(clienteId: string) {
+    const ultimaValoracion = await prisma.valoracion.findFirst({
+        where: { clienteId, deletedAt: null },
+        orderBy: { fecha: 'desc' },
+        select: { altura: true },
+    });
+
+    return ultimaValoracion?.altura ?? null;
 }

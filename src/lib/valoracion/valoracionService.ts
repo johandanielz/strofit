@@ -16,12 +16,25 @@ export interface ClienteRepositoryParaValoracion {
 const pliegueSchema = z.coerce.number().positive('Debe ser un número positivo');
 const medidaSchema = z.coerce.number().positive('Debe ser un número positivo');
 
+// Los formularios HTML siempre envían campos vacíos como "", nunca "ausentes".
+// Sin este preprocess, "" se coerciona a NaN y falla .positive() aunque el
+// campo sea opcional y el usuario lo dejó vacío a propósito.
+const numeroPositivoOpcional = z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().positive().optional()
+);
+
+const textoOpcional = z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().optional()
+);
+
 const registrarValoracionSchema = z.object({
     clienteId: z.string().min(1, 'El cliente es obligatorio'),
     citaAgendaId: z.string().optional(),
     fecha: z.coerce.date(),
     peso: z.coerce.number().positive('El peso debe ser un número positivo'),
-    altura: z.coerce.number().positive().optional(),
+    altura: numeroPositivoOpcional,
 
     pliegueEctoral: pliegueSchema,
     pliegueAxial: pliegueSchema,
@@ -53,8 +66,8 @@ const registrarValoracionSchema = z.object({
     pantorrillaIzquierda: medidaSchema,
     pantorrillaDerecha: medidaSchema,
 
-    puntoCriticoNombre: z.string().optional(),
-    puntoCriticoMedida: z.coerce.number().positive().optional(),
+    puntoCriticoNombre: textoOpcional,
+    puntoCriticoMedida: numeroPositivoOpcional,
 });
 
 export type RegistrarValoracionResult =
