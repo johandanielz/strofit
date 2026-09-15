@@ -1,0 +1,185 @@
+'use client';
+
+import { useState } from 'react';
+import { agendarAction } from './actions';
+import { useActionState } from 'react';
+
+interface Cliente {
+    id: string;
+    user: { nombre: string };
+}
+
+interface Cita {
+    id: string;
+    clienteId: string;
+    cancelada: boolean;
+    cliente: { user: { nombre: string } };
+}
+
+interface Franja {
+    hora: string;
+    disponible: boolean;
+    cita: Cita | null;
+}
+
+interface Dia {
+    fecha: string; // ISO, ya serializada desde el servidor
+    diaSemana: number;
+    franjas: Franja[];
+}
+
+const NOMBRES_DIA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+export function CalendarioSemana({ dias, clientes }: { dias: Dia[]; clientes: Cliente[] }) {
+    const [franjaSeleccionada, setFranjaSeleccionada] = useState<{ fecha: string; hora: string } | null>(null);
+
+    // Unimos todas las horas únicas de todos los días, para tener filas consistentes en la tabla.
+    const horasUnicas = Array.from(new Set(dias.flatMap((d) => d.franjas.map((f) => f.hora)))).sort();
+
+    function celdaDe(dia: Dia, hora: string): Franja | undefined {
+        return dia.franjas.find((f) => f.hora === hora);
+    }
+
+    return (
+        <div>
+            <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                    <thead>
+                        <tr>
+                            <th className="border border-[#E8E6DF] p-2 text-left">Hora</th>
+                            {dias.map((dia) => (
+                                <th key={dia.fecha} className="border border-[#E8E6DF] p-2 text-left">
+                                    {NOMBRES_DIA[dia.diaSemana]} {new Date(dia.fecha).getDate()}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {horasUnicas.map((hora) => (
+                            <tr key={hora}>
+                                <td className="border border-[#E8E6DF] p-2 font-medium text-[#3D3D3A]">{hora}</td>
+                                {dias.map((dia) => {
+                                    const franja = celdaDe(dia, hora);
+
+                                    if (!franja) {
+                                        return <td key={dia.fecha} className="border border-[#E8E6DF] bg-[#f5f5f0]" />;
+                                    }
+
+                                    if (!franja.disponible) {
+                                        return (
+                                            <td key={dia.fecha} className="border border-[#E8E6DF] bg-[#f0f0eb] p-2 text-center text-xs text-[#9c9a92]">
+                                                Fuera de horario
+                                            </td>
+                                        );
+                                    }
+
+                                    if (franja.cita) {
+                                        const cancelada = franja.cita.cancelada;
+                                        return (
+                                            <td
+                                                key={dia.fecha}
+                                                className={`border border-[#E8E6DF] p-2 text-center text-xs ${
+                                                    cancelada
+                                                        ? 'text-[#9c9a92] line-through'
+                                                        : 'bg-[#EAF7DC] font-medium text-black'
+                                                }`}
+                                            >
+                                                {franja.cita.cliente.user.nombre}
+                                                {cancelada && ' (cancelada)'}
+                                            </td>
+                                        );
+                                    }
+
+                                    return (
+                                        <td
+                                            key={dia.fecha}
+                                            onClick={() => setFranjaSeleccionada({ fecha: dia.fecha, hora })}
+                                            className="cursor-pointer border border-[#E8E6DF] p-2 text-center text-xs text-[#3D3D3A] hover:bg-[#7ED321]/10"
+                                        >
+                                            +
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {franjaSeleccionada && (
+                <ModalAgendar
+                    fecha={franjaSeleccionada.fecha}
+                    hora={franjaSeleccionada.hora}
+                    clientes={clientes}
+                    onClose={() => setFranjaSeleccionada(null)}
+                />
+            )}
+        </div>
+    );
+}
+
+function ModalAgendar({
+    fecha,
+    hora,
+    clientes,
+    onClose,
+}: {
+    fecha: string;
+    hora: string;
+    clientes: Cliente[];
+    onClose: () => void;
+}) {
+    const [state, formAction, isPending] = useActionState(agendarAction, {});
+    const [h, m] = hora.split(':').map(Number);
+    const fechaHoraInicio = new Date(fecha);
+    fechaHoraInicio.setHours(h, m, 0, 0);
+
+    if (state.success) {
+        onClose();
+    }
+
+    return (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-sm rounded-md bg-white p-6">
+                <h3 className="mb-4 font-semibold text-black">
+                    Agendar — {new Date(fecha).toLocaleDateString()} {hora}
+                </h3>
+                <form action={formAction} className="space-y-4">
+                    <input type="hidden" name="fechaInicio" value={fechaHoraInicio.toISOString()} />
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-[#3D3D3A]">Cliente</label>
+                        <select name="clienteId" required className="w-full rounded-md border border-[#E8E6DF] px-3 py-2">
+                            <option value="">Selecciona…</option>
+                            {clientes.map((c) => (
+                                <option key={c.id} value={c.id}>{c.user.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-[#3D3D3A]">Observaciones (opcional)</label>
+                        <textarea name="observaciones" className="w-full rounded-md border border-[#E8E6DF] px-3 py-2" />
+                    </div>
+
+                    {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-md border border-[#E8E6DF] py-2 text-sm font-medium text-black"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isPending}
+                            className="flex-1 rounded-md bg-black py-2 text-sm font-semibold text-white disabled:opacity-50"
+                        >
+                            {isPending ? 'Agendando…' : 'Agendar'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
