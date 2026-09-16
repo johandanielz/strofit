@@ -30,7 +30,7 @@
 | HU-04  | Agenda de valoraciones                                 | Must   | 2      | Completado    |
 | HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
-| HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
+| HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | Completado     |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
 | HU-09  | Informe de valoraciones (cliente)                      | Should | 2      | No iniciado    |
 | HU-10  | Creación de plan de entrenamiento                      | Must   | 3      | No iniciado    |
@@ -389,7 +389,11 @@ registra, antes de sumar la funcionalidad de fotos).
 > (poder consultar lo que ya se registró), que sí es indispensable con el
 > tiempo disponible.
 
-**Estado:** ⬜ No iniciado.
+**Estado:** ✅ Completado — historial de valoraciones en tabla (sin gráficas,
+según lo decidido), con capa de autorización real construida por primera vez
+en este proyecto (`assertClienteDelEntrenador`), y filtro de búsqueda de
+clientes. Verificado en navegador, incluyendo el caso de seguridad (acceso
+con ID inexistente/ajeno → 404).
 
 ---
 
