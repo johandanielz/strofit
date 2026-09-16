@@ -13,7 +13,7 @@
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
-| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 2/6 completas | 50/50 | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 3/6 completas | 53/53 | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -291,6 +291,8 @@ archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
 
+## Sprint 2 — Valoraciones físicas
+
 ### HU-04 — Agenda de valoraciones (cierre)
 
 **Estado:** ✅ Completado — 7 criterios de aceptación verificados en
@@ -422,6 +424,46 @@ coincide con el cálculo manual de verificación.
 `CitaAgenda` marca esa cita como `realizada` — se prueba junto con el
 cierre de HU-04 en la próxima sesión (necesita la UI de calendario para
 generar el flujo completo de principio a fin).
+
+### HU-07 — Informe de valoraciones (entrenador)
+
+**Estado:** ✅ Completado — verificado en navegador contra Supabase real,
+incluyendo el caso de seguridad.
+
+**Archivos:**
+- `src/lib/auth/guards.ts` — `assertClienteDelEntrenador`,
+  `AccesoNoAutorizadoError`, `GuardsRepository`/`prismaGuardsRepository`
+  (primera implementación real de autorización a nivel de aplicación en
+  el proyecto — antes solo se había discutido conceptualmente)
+- `src/app/(app)/clientes/lista/page.tsx` + `ListaFiltro.tsx` — lista de
+  clientes con filtro de búsqueda en tiempo real (Client Component,
+  filtra en memoria, sin consultas nuevas al servidor)
+- `src/app/(app)/clientes/[clienteId]/historial/page.tsx` — tabla de
+  historial, protegida con `assertClienteDelEntrenador` + `notFound()`
+- `src/app/not-found.tsx` — página 404 personalizada con estilo de marca
+- `tests/guards.test.ts` — 3/3 pruebas
+
+**Pruebas:** 3/3 nuevas. Suite completa: 53/53.
+
+**Verificación manual contra Supabase real:**
+- ✅ Lista de clientes con filtro funcionando
+- ✅ Historial completo mostrando todas las métricas calculadas
+- ✅ Acceso con `clienteId` inexistente → 404 (no revela si el cliente
+  existe o no, mismo principio que el mensaje genérico de HU-01)
+
+**Hallazgo importante (no bug, aclaración necesaria):** la sesión persiste
+entre apagados del PC porque Supabase Auth guarda el token en una cookie
+de disco (no en memoria), con renovación automática — comportamiento
+esperado, no un problema de seguridad.
+
+**Decisión de alcance documentada en `BackLog.md`:** se implementa la
+tabla cronológica sin gráficas de evolución — las gráficas quedan como
+mejora post-MVP explícita, no como omisión accidental.
+
+**Nota sobre HU-06:** pospuesta detrás de HU-07 por decisión de
+priorización — el valor de "poder consultar lo ya registrado" se
+consideró más urgente que "poder subir fotos", dado el tiempo limitado
+del MVP.
 
 ## Sprints 2 a 5
 
