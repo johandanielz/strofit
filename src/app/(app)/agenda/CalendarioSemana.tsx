@@ -243,6 +243,13 @@ function ModalGestionarCita({ cita, onClose }: { cita: Cita; onClose: () => void
                     </button>
                 </form>
 
+                <a 
+                    href={`/valoraciones?clienteId=${cita.clienteId}&citaAgendaId=${cita.id}`}
+                    className="mt-4 block w-full rounded-md bg-[#7ED321] py-2 text-center text-sm font-semibold text-black"
+                >
+                    Registrar valoración
+                </a>
+
                 <button
                     type="button"
                     onClick={onClose}
