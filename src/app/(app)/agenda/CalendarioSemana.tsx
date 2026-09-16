@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { agendarAction } from './actions';
+import { agendarAction, reagendarAction, cancelarAction } from './actions';
 import { useActionState } from 'react';
 
 interface Cliente {
@@ -32,6 +32,7 @@ const NOMBRES_DIA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export function CalendarioSemana({ dias, clientes }: { dias: Dia[]; clientes: Cliente[] }) {
     const [franjaSeleccionada, setFranjaSeleccionada] = useState<{ fecha: string; hora: string } | null>(null);
+    const [citaSeleccionada, setCitaSeleccionada] = useState<Cita | null>(null);
 
     // Unimos todas las horas únicas de todos los días, para tener filas consistentes en la tabla.
     const horasUnicas = Array.from(new Set(dias.flatMap((d) => d.franjas.map((f) => f.hora)))).sort();
@@ -78,10 +79,11 @@ export function CalendarioSemana({ dias, clientes }: { dias: Dia[]; clientes: Cl
                                         return (
                                             <td
                                                 key={dia.fecha}
+                                                onClick={() => !cancelada && setCitaSeleccionada(franja.cita)}
                                                 className={`border border-[#E8E6DF] p-2 text-center text-xs ${
                                                     cancelada
                                                         ? 'text-[#9c9a92] line-through'
-                                                        : 'bg-[#EAF7DC] font-medium text-black'
+                                                        : 'cursor-pointer bg-[#EAF7DC] font-medium text-black hover:bg-[#EAF7DC]/70'
                                                 }`}
                                             >
                                                 {franja.cita.cliente.user.nombre}
@@ -112,6 +114,13 @@ export function CalendarioSemana({ dias, clientes }: { dias: Dia[]; clientes: Cl
                     hora={franjaSeleccionada.hora}
                     clientes={clientes}
                     onClose={() => setFranjaSeleccionada(null)}
+                />
+            )}
+
+            {citaSeleccionada && (
+                <ModalGestionarCita
+                    cita={citaSeleccionada}
+                    onClose={() => setCitaSeleccionada(null)}
                 />
             )}
         </div>
@@ -181,6 +190,66 @@ function ModalAgendar({
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+function ModalGestionarCita({ cita, onClose }: { cita: Cita; onClose: () => void }) {
+    const [stateReagendar, formActionReagendar, isPendingReagendar] = useActionState(reagendarAction, {});
+    const [stateCancelar, formActionCancelar, isPendingCancelar] = useActionState(cancelarAction, {});
+
+    useEffect(() => {
+        if (stateReagendar.success || stateCancelar.success) {
+            onClose();
+        }
+    }, [stateReagendar.success, stateCancelar.success, onClose]);
+
+    return (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-sm rounded-md bg-white p-6">
+                <h3 className="mb-4 font-semibold text-black">{cita.cliente.user.nombre}</h3>
+
+                <form action={formActionReagendar} className="space-y-4 border-b border-[#E8E6DF] pb-4">
+                    <input type="hidden" name="citaId" value={cita.id} />
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-[#3D3D3A]">Nueva fecha y hora</label>
+                        <input
+                            type="datetime-local"
+                            name="fechaInicio"
+                            required
+                            className="w-full rounded-md border border-[#E8E6DF] px-3 py-2 text-black"
+                        />
+                    </div>
+                    {stateReagendar.error && <p className="text-sm text-red-600">{stateReagendar.error}</p>}
+                    <button
+                        type="submit"
+                        disabled={isPendingReagendar}
+                        className="w-full rounded-md bg-black py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                        {isPendingReagendar ? 'Reagendando…' : 'Reagendar'}
+                    </button>
+                </form>
+
+                <form action={formActionCancelar} className="mt-4 space-y-2">
+                    <input type="hidden" name="citaId" value={cita.id} />
+                    {stateCancelar.error && <p className="text-sm text-red-600">{stateCancelar.error}</p>}
+                    <button
+                        type="submit"
+                        disabled={isPendingCancelar}
+                        className="w-full rounded-md border border-red-600 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
+                    >
+                        {isPendingCancelar ? 'Cancelando…' : 'Cancelar cita'}
+                    </button>
+                </form>
+
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="mt-4 w-full text-sm text-[#3D3D3A]"
+                >
+                    Cerrar
+                </button>
             </div>
         </div>
     );
