@@ -371,7 +371,29 @@ de HU-04, cuando exista la UI de calendario para generar ese flujo completo.
 
 ---
 
-## HU-06 a HU-20
+## HU-06 — Subida de 4 fotos por valoración
+
+**Estado:** ⬜ No iniciado — pospuesta detrás de HU-07 (decisión de priorización
+de hoy: primero garantizar que el entrenador pueda *consultar* lo que ya
+registra, antes de sumar la funcionalidad de fotos).
+
+---
+
+## HU-07 — Informe de valoraciones (entrenador)
+
+> **Alcance para el MVP (decidido al priorizar):** se implementa la vista de
+> historial como tabla cronológica de valoraciones (fecha, peso, % grasa,
+> IMC, y demás métricas calculadas) — sin gráficas de evolución todavía.
+> Las gráficas visuales quedan documentadas como mejora post-MVP: son un
+> complemento de presentación, no bloquean el objetivo central de HU-07
+> (poder consultar lo que ya se registró), que sí es indispensable con el
+> tiempo disponible.
+
+**Estado:** ⬜ No iniciado.
+
+---
+
+## HU-08 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada
