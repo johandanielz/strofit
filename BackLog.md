@@ -27,7 +27,7 @@
 | HU-02c  | Cambiar contraseña (usuario autenticado)              | Must   | 1      | No iniciado    |
 | HU-02d  | Restablecer contraseña olvidada                       | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
-| HU-04  | Agenda de valoraciones                                 | Must   | 2      | En progreso    |
+| HU-04  | Agenda de valoraciones                                 | Must   | 2      | Completado    |
 | HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | No iniciado    |
@@ -316,10 +316,11 @@ Comparte flujo y criterios con HU-01; la única salvedad es el rol resultante.
 > `valoracion Valoracion?` a `CitaAgenda` y el lado inverso correspondiente,
 > requiriendo una migración adicional.
 
-**Estado:** 🔶 En progreso — lógica de negocio completa y probada
-(`AgendaService`, `AgendaRepository`, 7/7 pruebas unitarias). Server action
-`agendarAction` implementada. Pendiente: server action `reagendarAction`,
-`cancelarAction`, y toda la UI (formulario + vista de calendario, criterio 5).
+**Estado:** ✅ Completado — vista de calendario semanal con horario real del
+entrenador (incluye hueco de almuerzo y horario distinto de sábado), modal
+para agendar/reagendar/cancelar, y conexión verificada con HU-05 (registrar
+valoración desde una cita la marca como `realizada`). Todo verificado en
+navegador contra Supabase real.
 
 ---
 

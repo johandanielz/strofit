@@ -13,7 +13,7 @@
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
-| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 🔶 2/6 (HU-04 en progreso, HU-05 completa) | 20/20 | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 2/6 completas | 50/50 | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -291,51 +291,48 @@ archivos ni pruebas adicionales — ver HU-01 arriba para el detalle completo.
 
 ---
 
-### HU-04 — Agenda de valoraciones
+### HU-04 — Agenda de valoraciones (cierre)
 
-**Estado:** 🔶 En progreso — lógica de negocio completa, UI pendiente para la
-próxima sesión.
+**Estado:** ✅ Completado — 7 criterios de aceptación verificados en
+navegador.
 
-**Archivos:**
-- `prisma/schema.prisma` — modelo `CitaAgenda` migrado (colchón de 15 min,
-  tracking de reagendamiento con `fechaInicioOriginal`)
-- `src/lib/agenda/agendaRepository.ts` — `AgendaRepository`, detección de
-  cruces vía `cliente: { entrenadorId }` (sin desnormalizar, decisión consciente
-  dado el volumen bajo de datos esperado)
-- `src/lib/agenda/agendaService.ts` — `agendar()` y `reagendar()`, con
-  validación zod y las reglas de negocio de HU-04
-- `src/app/agenda/actions.ts` — `agendarAction` (server action)
-- `tests/agenda.test.ts` — 7/7 pruebas unitarias
+**Archivos de esta sesión:**
+- `src/lib/agenda/horarioTrabajo.ts` — horario real del entrenador
+  (bloques mañana/tarde con hueco de almuerzo, sábado distinto), 7/7 pruebas
+- `src/lib/agenda/agendaRepository.ts` — `obtenerCitasEnRango`,
+  `AgendaCitaConCliente` (extiende `AgendaCita` solo para este método)
+- `src/lib/agenda/agendaService.ts` — `obtenerSemana` combina franjas +
+  citas reales en la estructura `DiaCalendario[]`
+- `src/app/(app)/agenda/` — movido desde `src/app/agenda/` (protección de
+  sesión), `page.tsx`, `CalendarioSemana.tsx`, `actions.ts` extendido
 
-**Pruebas:** 7/7 ✅ — cubren cálculo de fechaFin, detección de cruces, campos
-obligatorios, fecha en el pasado, reagendamiento con tracking de fecha original,
-y que una cita no choque consigo misma al revalidar cruces.
+**Pruebas:** 7/7 nuevas de horario de trabajo. Suite completa: 50/50.
 
-**Criterios de aceptación cubiertos por la lógica (pendiente verificación
-manual en navegador):**
-1. ✅ Calcula fechaFin automáticamente (15 min de colchón)
-2. ✅ Rechaza cruces de horario (a nivel de todo el entrenador, no solo del cliente)
-3. ✅ Valida campos obligatorios
-4. ✅ Rechaza fechas en el pasado
-5. ⬜ Vista de calendario — pendiente, es UI
-6. ✅ Reagendar revalida cruces (excluyendo la propia cita)
-7. ⬜ Cancelar — pendiente en el servicio y su server action
+**Verificación manual contra Supabase real:**
+- ✅ Vista de calendario semanal con franjas correctas (disponibles,
+  fuera de horario, ocupadas)
+- ✅ Agendar desde clic en franja libre (modal)
+- ✅ Reagendar y cancelar desde clic en cita existente (modal)
+- ✅ Citas canceladas se muestran tachadas, no clicables
+- ✅ **Conexión HU-04 → HU-05 verificada:** botón "Registrar valoración"
+  desde el modal de una cita → formulario preseleccionado con cliente y
+  altura sugerida → al guardar, la `CitaAgenda` correspondiente queda
+  `realizada: true` (transacción atómica de HU-05, ver Progress.md → HU-05)
 
-**Decisiones de diseño documentadas en `BackLog.md`:**
-- HU-04 se prioriza en el MVP a pesar de la contradicción del documento
-  original, porque el entrenador ya agenda verbalmente
-- Duración estándar de 15 min (10 min reales + colchón de 5 min)
-- Reagendamiento guarda la fecha original solo la primera vez (no en
-  reagendamientos sucesivos)
-- Cruces de horario se verifican con `JOIN` vía `cliente.entrenadorId`, sin
-  desnormalizar el campo — decisión revisada y confirmada dado el volumen bajo
-  de datos esperado (se descartó una optimización prematura)
+**Bugs encontrados y corregidos durante la verificación manual:**
+1. **Contraste de texto insuficiente** en encabezados del calendario y
+   campos del modal — clases sin color explícito heredaban gris claro
+2. **`setState` durante render** — `ModalAgendar` llamaba `onClose()`
+   (que actualiza el estado del padre) directamente en el cuerpo del
+   componente en vez de en un `useEffect`, violando las reglas de React
+3. **`useEffect` mal ubicado dentro de JSX** — al conectar la cita con
+   el formulario de valoración, un `useEffect` quedó pegado dentro del
+   `return()` en vez de en el cuerpo de la función, causando errores de
+   parsing de JSX (`if` y hooks no son expresiones válidas dentro de `{}`)
 
-**Pendiente para la próxima sesión:**
-- `reagendarAction` y `cancelarAction` (server actions)
-- Formulario para agendar una cita
-- Vista de calendario (día/semana/mes) — criterio 5, la pieza de UI más grande
-- Verificación manual completa contra Supabase real
+**Decisión de diseño:** vista de semana en vez de mes/día — cubre el
+caso de uso real sin la complejidad de una cuadrícula mensual completa.
+Documentado como mejora futura (ver `BackLog.md`).
 
 ### HU-05 — Registro de valoración física
 
