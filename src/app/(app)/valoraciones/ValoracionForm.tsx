@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { registrarValoracionAction, RegistrarValoracionActionState, obtenerAlturaSugerida } from './actions';
 
 const initialState: RegistrarValoracionActionState = {};
@@ -22,9 +22,23 @@ function obtenerFechaLocalHoy(): string {
     return `${año}-${mes}-${dia}`;
 }
 
-export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
+export function ValoracionForm({
+    clientes,
+    clienteIdPreseleccionado,
+    citaAgendaId,
+}: {
+    clientes: Cliente[];
+    clienteIdPreseleccionado?: string;
+    citaAgendaId?: string;
+}) {
     const [state, formAction, isPending] = useActionState(registrarValoracionAction, initialState);
     const [alturaSugerida, setAlturaSugerida] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (clienteIdPreseleccionado) {
+            handleClienteChange(clienteIdPreseleccionado);
+        }
+    }, [clienteIdPreseleccionado]);
 
     async function handleClienteChange(clienteId: string) {
         if (!clienteId) {
@@ -37,6 +51,7 @@ export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
 
     return (
         <form action={formAction} className="max-w-2xl space-y-8">
+            {citaAgendaId && <input type="hidden" name="citaAgendaId" value={citaAgendaId} />}
             {/* --- Datos generales --- */}
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold text-black">Datos generales</h2>
@@ -47,6 +62,7 @@ export function ValoracionForm({ clientes }: { clientes: Cliente[] }) {
                             id="clienteId"
                             name="clienteId"
                             required
+                            defaultValue={clienteIdPreseleccionado ?? ''}
                             onChange={(e) => handleClienteChange(e.target.value)}
                             className={inputClass}
                         >

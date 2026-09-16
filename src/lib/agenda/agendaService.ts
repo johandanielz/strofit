@@ -1,5 +1,17 @@
 import { z } from 'zod';
 import { AgendaRepository, AgendaCita } from './agendaRepository';
+import { generarFranjasDelDia, Franja } from './horarioTrabajo';
+import { AgendaCitaConCliente } from './agendaRepository';
+
+export interface FranjaConCita extends Franja {
+    cita: AgendaCitaConCliente | null;
+}
+
+export interface DiaCalendario {
+    fecha: Date;
+    diaSemana: number;
+    franjas: FranjaConCita[];
+}
 
 export const DURACION_VALORACION_MINUTOS = 15;
 
@@ -121,5 +133,45 @@ export class AgendaService {
 
         const cita = await this.agendaRepo.cancelar(citaId);
         return { ok: true, cita };
+    }
+
+    async obtenerSemana(entrenadorId: string, fechaInicioSemana: Date): Promise<DiaCalendario[]> {
+        const fechaFinSemana = new Date(fechaInicioSemana);
+        fechaFinSemana.setDate(fechaFinSemana.getDate() + 7);
+
+        const citas = await this.agendaRepo.obtenerCitasEnRango(
+            entrenadorId,
+            fechaInicioSemana,
+            fechaFinSemana
+        );
+
+        const dias: DiaCalendario[] = [];
+
+        for (let i = 0; i < 7; i++) {
+            const fecha = new Date(fechaInicioSemana);
+            fecha.setDate(fecha.getDate() + i);
+            const diaSemana = fecha.getDay();
+
+            const franjasBase = generarFranjasDelDia(diaSemana);
+
+            const franjas: FranjaConCita[] = franjasBase.map((franja) => {
+                const [h, m] = franja.hora.split(':').map(Number);
+                const horaFranja = new Date(fecha);
+                horaFranja.setHours(h, m, 0, 0);
+
+                const citaEnEstaFranja = citas.find((c) => {
+                    return (
+                        c.fechaInicio.getTime() <= horaFranja.getTime() &&
+                        c.fechaFin.getTime() > horaFranja.getTime()
+                    );
+                });
+
+                return { ...franja, cita: citaEnEstaFranja ?? null };
+            });
+
+            dias.push({ fecha, diaSemana, franjas });
+        }
+
+        return dias;
     }
 }
