@@ -13,7 +13,7 @@
 | Sprint | Módulo                        | HU totales | Implementadas | Pruebas | Cobertura |
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
-| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 3/6 completas | 53/53 | — |
+| 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 4/6 completas (HU-06 parcial) | 53/53 | — |
 | 3      | Entrenamiento                   | 4 | 0/4 | — | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
@@ -424,6 +424,56 @@ coincide con el cálculo manual de verificación.
 `CitaAgenda` marca esa cita como `realizada` — se prueba junto con el
 cierre de HU-04 en la próxima sesión (necesita la UI de calendario para
 generar el flujo completo de principio a fin).
+
+### HU-06 — Subida de 4 fotos por valoración
+
+**Estado:** ✅ Completado (parcial) — subida verificada en navegador contra
+Supabase Storage real. Lectura/visualización de fotos ya subidas queda
+pendiente.
+
+**Archivos:**
+- Bucket `fotos-valoraciones` en Supabase Storage — privado, límite 5MB,
+  solo `image/jpeg`, `image/png`, `image/webp`; 4 políticas RLS
+  (SELECT/INSERT/UPDATE/DELETE, restringidas a `authenticated` + este bucket)
+- `prisma/schema.prisma` — modelo `FotoValoracion`, enum `AnguloFoto`,
+  `@@unique([valoracionId, angulo])` (permite upsert en vez de duplicar)
+- `src/lib/valoracion/fotoValoracionRepository.ts` — `guardarOReemplazar`
+  usa `prisma.fotoValoracion.upsert`
+- `src/lib/valoracion/subirFoto.ts` — sube directo del navegador a Storage
+  (`'use client'` en un archivo sin JSX, primera vez en el proyecto),
+  con `{ upsert: true }` del lado de Storage también
+- `src/app/(app)/valoraciones/[valoracionId]/fotos/` — `FotosForm.tsx`
+  (previsualización con `URL.createObjectURL`, subida secuencial no
+  paralela para identificar fallos por ángulo), `page.tsx`, `actions.ts`
+  (`guardarRutaFoto`)
+- `registrarValoracionAction` ajustada para redirigir a esta página tras
+  guardar la valoración (en vez de mostrar éxito inline)
+
+**Decisión de arquitectura:** autorización de Storage se mantiene simple
+a nivel de RLS (solo "usuario autenticado"), consistente con el patrón ya
+establecido en el proyecto de resolver lógica de negocio compleja en la
+capa de aplicación (no en políticas SQL) — mismo criterio que
+`assertClienteDelEntrenador` de HU-07.
+
+**Verificación manual contra Supabase real:**
+- ✅ Selección y previsualización de múltiples fotos sin subir nada
+  hasta confirmar
+- ✅ Subida conjunta de varias fotos, guardadas correctamente en Storage
+  y en `FotoValoracion`
+- ✅ Mensaje de confirmación visible antes de redirigir
+
+**Bug encontrado y corregido durante la verificación manual:** primera
+versión navegaba inmediatamente tras subir, sin dar tiempo a ver ningún
+mensaje de confirmación — un `router.push()` fuera del `setTimeout`
+competía con el que sí esperaba, y el estado `exito` nunca se activaba.
+Corregido: solo un `router.push()`, dentro del `setTimeout`, después de
+`setExito(true)`.
+
+**Pendiente explícito para una sesión futura:**
+- Mostrar las fotos ya subidas (ej. en el historial de valoraciones de
+  HU-07) — hoy la funcionalidad es de solo escritura, sin lectura visual
+- Considerar URLs firmadas temporales para el acceso de lectura, en vez
+  de exponer rutas directas
 
 ### HU-07 — Informe de valoraciones (entrenador)
 
