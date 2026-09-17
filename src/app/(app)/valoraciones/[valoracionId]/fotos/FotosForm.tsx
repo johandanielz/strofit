@@ -20,6 +20,7 @@ export function FotosForm({ valoracionId }: { valoracionId: string }) {
     const [previsualizaciones, setPrevisualizaciones] = useState<Partial<Record<Angulo, string>>>({});
     const [subiendo, setSubiendo] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [exito, setExito] = useState(false);
 
     function handleSeleccionarArchivo(angulo: Angulo, archivo: File | null) {
         if (!archivo) return;
@@ -53,7 +54,11 @@ export function FotosForm({ valoracionId }: { valoracionId: string }) {
         }
 
         setSubiendo(false);
-        router.push('/clientes/lista');
+        setExito(true);
+
+        setTimeout(() => {
+            router.push('/clientes/lista');
+        }, 2000);
     }
 
     return (
@@ -87,6 +92,12 @@ export function FotosForm({ valoracionId }: { valoracionId: string }) {
                     </div>
                 ))}
             </div>
+
+            {exito && (
+                <p className="mt-4 text-sm font-medium text-green-700">
+                    ✓ Fotos subidas correctamente. Redirigiendo…
+                </p>
+            )}
 
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
