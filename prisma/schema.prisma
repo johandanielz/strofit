@@ -149,6 +149,28 @@ model Valoracion {
 
   deletedAt DateTime?
 
+  fotos FotoValoracion[]
+
   @@index([clienteId, fecha])
   @@index([deletedAt])
+}
+
+enum AnguloFoto {
+  FRONTAL
+  ESPALDA
+  PERFIL_DERECHO
+  PERFIL_IZQUIERDO
+}
+
+model FotoValoracion {
+  id           String     @id @default(uuid())
+  valoracionId String
+  valoracion   Valoracion @relation(fields: [valoracionId], references: [id], onDelete: Restrict)
+  angulo       AnguloFoto
+  storagePath  String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([valoracionId, angulo])
 }

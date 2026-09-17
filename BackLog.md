@@ -29,7 +29,7 @@
 | HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
 | HU-04  | Agenda de valoraciones                                 | Must   | 2      | Completado    |
 | HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
-| HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | No iniciado    |
+| HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | Completado (parcial)    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | Completado     |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
 | HU-09  | Informe de valoraciones (cliente)                      | Should | 2      | No iniciado    |
@@ -373,9 +373,13 @@ de HU-04, cuando exista la UI de calendario para generar ese flujo completo.
 
 ## HU-06 — Subida de 4 fotos por valoración
 
-**Estado:** ⬜ No iniciado — pospuesta detrás de HU-07 (decisión de priorización
-de hoy: primero garantizar que el entrenador pueda *consultar* lo que ya
-registra, antes de sumar la funcionalidad de fotos).
+**Estado:** ✅ Completado (parcial) — flujo completo de subida funcional y
+verificado: bucket privado en Supabase Storage con políticas RLS básicas,
+previsualización antes de confirmar, subida conjunta de las 4 fotos,
+reemplazo automático vía `upsert` (mismo ángulo = actualiza, no duplica).
+**Pendiente:** mostrar las fotos ya subidas en algún lugar de la aplicación
+(ej. en el historial de HU-07) — hoy solo se pueden subir, no visualizar
+de vuelta.
 
 ---
 
