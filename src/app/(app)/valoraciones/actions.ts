@@ -7,6 +7,7 @@ import { prismaValoracionRepository } from '@/lib/valoracion/valoracionRepositor
 import { prismaClienteRepositoryParaValoracion } from '@/lib/valoracion/prismaClienteRepositoryParaValoracion';
 import { obtenerEntrenadorIdDeLaSesion } from '@/lib/auth/getEntrenadorId';
 import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
 
 export type RegistrarValoracionActionState = {
     error?: string;
@@ -40,7 +41,7 @@ export async function registrarValoracionAction(
     }
 
     revalidatePath('/dashboard/clientes');
-    return { success: true };
+    redirect(`/valoraciones/${result.valoracion.id}/fotos`);
 }
 
 export async function obtenerClientesDelEntrenador() {
