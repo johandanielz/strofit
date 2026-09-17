@@ -401,7 +401,23 @@ con ID inexistente/ajeno → 404).
 
 ---
 
-## HU-08 a HU-20
+## HU-10 — Creación de plan de entrenamiento 
+
+> **Pregunta pendiente con el entrenador (bloqueante para HU-10):** el modelo de
+> `EjercicioBiblioteca` necesita una tabla `CategoriaEjercicio` (no un enum fijo —
+> se detectó, revisando un Excel real de un cliente, que las categorías son
+> numerosas y específicas: AISLAMIENTO ISQUIOS, TRACCIÓN VERTICAL, EMPUJE INCLINADO,
+> etc. — más de 20 solo en una muestra parcial). Falta confirmar con Juan Pablo:
+> ¿esa es la lista completa de categorías que usa, o hay más? ¿Prefiere que el
+> sistema le permita crear categorías nuevas libremente, o maneja un catálogo
+> cerrado que él define de antemano?
+
+**Estado:** ⬜ No iniciado — bloqueado en definición del modelo de datos,
+pendiente de confirmación con el entrenador.
+
+---
+
+## HU-11 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada
