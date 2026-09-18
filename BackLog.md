@@ -23,17 +23,20 @@
 | HU-01  | Login del entrenador                                   | Must   | 1      | Completado     |
 | HU-01b | Cerrar sesión                                          | Must   | 1      | Completado     |
 | HU-02  | Registro de cliente                                    | Must   | 1      | Reemplazada    |
-| HU-02b  | Alta de cliente por el entrenador                     | Must   | 1      | Implementado (parcial) |
-| HU-02c  | Cambiar contraseña (usuario autenticado)              | Must   | 1      | No iniciado    |
-| HU-02d  | Restablecer contraseña olvidada                       | Must   | 1      | No iniciado    |
+| HU-02b | Alta de cliente por el entrenador                      | Must   | 1      | Implementado (parcial) |
+| HU-02c | Cambiar contraseña (usuario autenticado)               | Must   | 1      | No iniciado    |
+| HU-02d | Restablecer contraseña olvidada                        | Must   | 1      | No iniciado    |
 | HU-03  | Login del cliente                                      | Must   | 1      | Completado     |
-| HU-04  | Agenda de valoraciones                                 | Must   | 2      | Completado    |
+| HU-04  | Agenda de valoraciones                                 | Must   | 2      | Completado     |
 | HU-05  | Registro de valoración física                          | Must   | 2      | Completado     |
 | HU-06  | Subida de 4 fotos por valoración                       | Should | 2      | Completado (parcial)    |
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | Completado     |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
 | HU-09  | Informe de valoraciones (cliente)                      | Should | 2      | No iniciado    |
 | HU-10  | Creación de plan de entrenamiento                      | Must   | 3      | No iniciado    |
+| HU-10b | Control diario                                         | Must   | 3      | No iniciado    |
+| HU-10c | Test pre/post de sesión                                | Could  | 3      | No iniciado    |
+| HU-10d | Coach View                                             | Could  | 3      | No iniciado    |
 | HU-11  | Visualización del entrenamiento (cliente)              | Must   | 3      | No iniciado    |
 | HU-12  | Registro de series ejecutadas                          | Should | 3      | No iniciado    |
 | HU-13  | Video de referencia del ejercicio                      | Could  | 3      | No iniciado    |
@@ -401,19 +404,81 @@ con ID inexistente/ajeno → 404).
 
 ---
 
-## HU-10 — Creación de plan de entrenamiento 
+## HU-10 — Creación de plan de entrenamiento
 
-> **Pregunta pendiente con el entrenador (bloqueante para HU-10):** el modelo de
-> `EjercicioBiblioteca` necesita una tabla `CategoriaEjercicio` (no un enum fijo —
-> se detectó, revisando un Excel real de un cliente, que las categorías son
-> numerosas y específicas: AISLAMIENTO ISQUIOS, TRACCIÓN VERTICAL, EMPUJE INCLINADO,
-> etc. — más de 20 solo en una muestra parcial). Falta confirmar con Juan Pablo:
-> ¿esa es la lista completa de categorías que usa, o hay más? ¿Prefiere que el
-> sistema le permita crear categorías nuevas libremente, o maneja un catálogo
-> cerrado que él define de antemano?
+> **Modelo confirmado con el entrenador (revisando su Excel real de seguimiento):**
+> el plan de entrenamiento tiene 4 niveles, no 2 como se pensaba originalmente:
+> `PlanEntrenamiento` (macrociclo de 12 semanas) → `Microciclo` (12 por macrociclo,
+> ~4 semanas entre valoraciones) → `SesionEntrenamiento` → `Ejercicio` (con series,
+> repeticiones sugeridas, descanso, RIR, tomado de `EjercicioBiblioteca`).
+> `EjercicioBiblioteca` requiere `CategoriaEjercicio` como tabla (no enum) — se
+> confirmaron 20 categorías reales y específicas (AISLAMIENTO ISQUIOS, TRACCIÓN
+> VERTICAL, etc.), con espacio para crecer.
 
-**Estado:** ⬜ No iniciado — bloqueado en definición del modelo de datos,
-pendiente de confirmación con el entrenador.
+> **Alcance para hoy (decidido al priorizar):** se construye hasta `Ejercicio`
+> (la plantilla que define el entrenador). `RegistroSerie` (lo que el cliente
+> ejecuta) queda pospuesto junto con HU-11/HU-12 — mismo criterio que HU-09:
+> el sistema todavía no tiene un flujo real para el cliente, construir el registro
+> de series sin nada más del lado cliente no se podría probar de punta a punta.
+
+**Estado:** ⬜ No iniciado — listo para diseñar el schema.
+
+---
+
+## HU-10b — Control diario del cliente *(nueva)*
+
+**Como** cliente, **quiero** registrar diariamente mi peso, pasos, horas de sueño,
+calidad de sueño y si cumplí con la dieta **para** que mi entrenador pueda hacer
+seguimiento de mi progreso día a día.
+
+**Descubierta al revisar el Excel real de seguimiento del entrenador** (hoja
+`CONTROL`), simplificada respecto a la hoja original (que tiene más campos:
+RENDIMIENTO, MOTIVACIÓN, HAMBRE, CANSANCIO, ESTRÉS — descartados por decisión
+del entrenador, no se necesitan para el MVP).
+
+**Criterios de aceptación (borrador):**
+1. Given que el cliente está autenticado, When accede a "Registrar control diario"
+   e ingresa fecha, peso, pasos, horas de sueño, calidad de sueño, y si cumplió
+   con la dieta (sí/no), Then el sistema guarda el registro.
+2. Given que ya existe un registro para esa fecha, When el cliente intenta
+   registrar de nuevo, Then el sistema [pendiente definir: actualiza o rechaza].
+
+**Estado:** ⬜ No iniciado — requiere flujo real del cliente (mismo bloqueo
+que HU-09/HU-11/HU-12).
+
+---
+
+## HU-10c — Test pre/post entrenamiento por sesión *(nueva, fuera del MVP)*
+
+**Como** cliente, **quiero** registrar mi nivel de recuperación antes de entrenar
+y la duración/dificultad de la sesión después **para** que mi entrenador ajuste
+la carga según cómo me sentí.
+
+**Descartada del MVP:** descubierta al revisar el Excel real, el entrenador
+confirmó que no es indispensable para esta fase.
+
+**Estado:** ⬜ No iniciado — fuera del MVP, documentada para una fase futura.
+
+---
+
+## HU-10d — Coach View: tonelaje y 1RM estimado *(nueva, fuera del MVP)*
+
+**Como** entrenador, **quiero** ver el tonelaje total y el 1RM estimado por
+ejercicio (y por categoría) en cada microciclo **para** evaluar objetivamente
+el progreso de fuerza del cliente.
+
+**Fórmulas confirmadas revisando el Excel real (no requieren datos nuevos,
+se calculan sobre `RegistroSerie` ya planeado):**
+
+```
+TON TOTAL = Σ(carga_serie × reps_serie) de las series de un ejercicio
+1RM ESTIMADO = carga_serie1 × (1 + 0.033 × (reps_serie1 + RIR_serie1))
+```
+
+**Descartada del MVP:** el entrenador confirmó que no es indispensable ahora —
+es un reporte calculado, se puede construir después sin afectar el resto.
+
+**Estado:** ⬜ No iniciado — fuera del MVP, documentada para una fase futura.
 
 ---
 
