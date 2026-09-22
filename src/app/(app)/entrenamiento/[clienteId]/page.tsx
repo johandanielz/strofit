@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { MacrocicloForm } from './MacrocicloForm';
+import { formatearFechaUTC } from '@/lib/formatearFechaUTC';
 
 export default async function MacrociclosPage({
     params,
@@ -36,7 +37,7 @@ export default async function MacrociclosPage({
                         href={`/entrenamiento/macrociclo/${m.id}`}
                         className="block rounded-md border border-[#E8E6DF] bg-white px-4 py-3 font-medium text-black hover:bg-[#f5f5f0]"
                     >
-                        Macrociclo desde {m.fechaInicio.toLocaleDateString()}
+                        Macrociclo desde {formatearFechaUTC(m.fechaInicio)}
                     </Link>
                 ))}
                 {macrociclos.length === 0 && (

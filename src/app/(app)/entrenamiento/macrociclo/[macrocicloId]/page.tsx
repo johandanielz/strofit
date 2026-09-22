@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { MicrocicloForm } from './MicrocicloForm';
+import { formatearFechaUTC } from '@/lib/formatearFechaUTC';
 
 export default async function MicrociclosPage({
     params,
@@ -28,7 +29,7 @@ export default async function MicrociclosPage({
                         href={`/entrenamiento/microciclo/${m.id}`}
                         className="block rounded-md border border-[#E8E6DF] bg-white px-4 py-3 font-medium text-black hover:bg-[#f5f5f0]"
                     >
-                        Microciclo {m.numero} — {m.fechaInicio.toLocaleDateString()} a {m.fechaFin.toLocaleDateString()}
+                        Microciclo {m.numero} — {formatearFechaUTC(m.fechaInicio)} a {formatearFechaUTC(m.fechaFin)}
                     </Link>
                 ))}
                 {microciclos.length === 0 && (
