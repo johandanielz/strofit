@@ -33,7 +33,7 @@
 | HU-07  | Informe de valoraciones (entrenador)                   | Should | 2      | Completado     |
 | HU-08  | Comparativo de fotos                                   | Could  | 2      | No iniciado    |
 | HU-09  | Informe de valoraciones (cliente)                      | Should | 2      | No iniciado    |
-| HU-10  | Creación de plan de entrenamiento                      | Must   | 3      | No iniciado    |
+| HU-10  | Creación de plan de entrenamiento                      | Must   | 3      | Completado     |
 | HU-10b | Control diario                                         | Must   | 3      | No iniciado    |
 | HU-10c | Test pre/post de sesión                                | Could  | 3      | No iniciado    |
 | HU-10d | Coach View                                             | Could  | 3      | No iniciado    |
@@ -421,7 +421,13 @@ con ID inexistente/ajeno → 404).
 > el sistema todavía no tiene un flujo real para el cliente, construir el registro
 > de series sin nada más del lado cliente no se podría probar de punta a punta.
 
-**Estado:** ⬜ No iniciado — listo para diseñar el schema.
+**Estado:** ✅ Completado — flujo completo verificado en navegador con datos
+reales del Excel de Juan Pablo: catálogo (categorías + biblioteca de
+ejercicios), macrociclo, microciclo, sesión, y ejercicio, todos encadenados.
+Combobox filtrable con cascada categoría → ejercicio agregado por sugerencia
+del entrenador, previendo el catálogo real completo (20+ categorías).
+`RegistroSerie` migrado (esquema listo) pero sin lógica de negocio —
+pospuesto para HU-11/HU-12, mismo criterio que HU-09.
 
 ---
 
