@@ -14,7 +14,7 @@
 |--------|--------------------------------|:---------:|:--------------:|:-------:|:---------:|
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
 | 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 4/6 completas (HU-06 parcial) | 53/53 | — |
-| 3      | Entrenamiento                   | 4 | 0/4 | — | — |
+| 3      | Entrenamiento                   | 4 (HU-10 a HU-13) | 1/4 completa | 33/33 | — |
 | 4      | Nutrición                       | 3 | 0/3 | — | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
 
@@ -515,7 +515,60 @@ priorización — el valor de "poder consultar lo ya registrado" se
 consideró más urgente que "poder subir fotos", dado el tiempo limitado
 del MVP.
 
-## Sprints 2 a 5
+---
+
+## Sprint 3 — Entrenamiento
+
+### HU-10 — Creación de plan de entrenamiento
+
+**Estado:** ✅ Completado — 86/86 pruebas en toda la suite, flujo verificado
+en navegador de punta a punta con datos reales.
+
+**Archivos:**
+- `prisma/schema.prisma` — 7 tablas nuevas (`CategoriaEjercicio`,
+  `EjercicioBiblioteca`, `Macrociclo`, `Microciclo`, `SesionEntrenamiento`,
+  `Ejercicio`, `RegistroSerie`)
+- `src/lib/entrenamiento/` — 6 repositorios + 6 servicios (Categoria,
+  EjercicioBiblioteca, Macrociclo, Microciclo, Sesion, Ejercicio), 33
+  pruebas unitarias
+- `src/lib/entrenamiento/validarUrlYoutube.ts` — validación de 3 formatos
+  de link (watch, shorts, youtu.be)
+- `src/components/ComboboxFiltrable.tsx` — selector genérico con búsqueda
+  de texto, reutilizable en cualquier formulario del proyecto
+- `src/lib/formatearFechaUTC.ts` — helper para mostrar fechas sin desfase
+  de zona horaria (mismo tipo de bug que HU-05, esta vez en otro punto)
+- `src/app/(app)/entrenamiento/` — 5 páginas encadenadas: catálogo,
+  macrociclos (por cliente), microciclos (por macrociclo), sesiones
+  (por microciclo), ejercicios (por sesión)
+
+**Decisiones de diseño confirmadas con el entrenador durante la sesión:**
+- Modelo de 4 niveles (Macrociclo/Microciclo/Sesión/Ejercicio), no 2 como
+  se pensaba originalmente
+- Sin estado ACTIVO/ARCHIVADO en Macrociclo — se edita en el tiempo, no
+  se reemplaza como Valoración o Nutrición
+- Microciclos y sesiones se crean uno a uno según se necesitan, no los
+  12 de golpe con fechas calculadas
+- `repeticionesSugeridas` y `rir` son `String`, no `Int` — datos reales
+  incluyen rangos ("8-10"), palabras clave ("MAX"), notas ("+ DROPS")
+- `RegistroSerie` migrado con la info fresca del Excel, sin lógica de
+  negocio — evita tener que recordar el diseño exacto después
+
+**Bug encontrado y corregido:** mismo patrón de zona horaria que en HU-05,
+esta vez en la visualización de fechas guardadas (no en la generación) —
+`toLocaleDateString()` restaba un día por conversión UTC→local. Corregido
+con `formatearFechaUTC()`, que lee componentes UTC directamente.
+
+**Nuevas HU documentadas durante la sesión (ver BackLog.md):**
+- HU-10b (Control diario) — entra al MVP, pendiente de construir
+- HU-10c (Test pre/post sesión) — fuera del MVP
+- HU-10d (Coach View: tonelaje y 1RM) — fuera del MVP, fórmulas ya
+  confirmadas y documentadas, no requiere datos nuevos
+
+**Pendiente:** HU-11/HU-12 (vista del cliente, registro de series) —
+mismo bloqueo que HU-09, el sistema no tiene flujo real de cliente
+todavía.
+
+## Sprints 4 a 5
 
 No iniciados. Se documentarán con el mismo formato (archivos, tabla de pruebas por
 criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden de

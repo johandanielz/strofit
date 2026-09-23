@@ -66,6 +66,7 @@ model Cliente {
 
   citasAgenda  CitaAgenda[]
   valoraciones Valoracion[]
+  macrociclos  Macrociclo[]
 
   @@index([entrenadorId])
   @@index([deletedAt])
@@ -173,4 +174,106 @@ model FotoValoracion {
   deletedAt    DateTime?
 
   @@unique([valoracionId, angulo])
+}
+
+model CategoriaEjercicio {
+  id        String    @id @default(uuid())
+  nombre    String    @unique
+  deletedAt DateTime?
+
+  ejercicios EjercicioBiblioteca[]
+
+  @@index([nombre])
+  @@index([deletedAt])
+}
+
+model EjercicioBiblioteca {
+  id            String             @id @default(uuid())
+  categoriaId   String
+  categoria     CategoriaEjercicio @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  nombre        String
+  notasTecnicas String?
+  videoUrl      String?
+  deletedAt     DateTime?
+
+  usos Ejercicio[]
+
+  @@index([categoriaId])
+  @@index([deletedAt])
+}
+
+model Macrociclo {
+  id          String    @id @default(uuid())
+  clienteId   String
+  cliente     Cliente   @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  fechaInicio DateTime  @default(now())
+  deletedAt   DateTime?
+
+  microciclos Microciclo[]
+
+  @@index([clienteId])
+  @@index([deletedAt])
+}
+
+model Microciclo {
+  id           String     @id @default(uuid())
+  macrocicloId String
+  macrociclo   Macrociclo @relation(fields: [macrocicloId], references: [id], onDelete: Restrict)
+  numero       Int
+  fechaInicio  DateTime
+  fechaFin     DateTime
+  deletedAt    DateTime?
+
+  sesiones SesionEntrenamiento[]
+
+  @@unique([macrocicloId, numero])
+  @@index([deletedAt])
+}
+
+model SesionEntrenamiento {
+  id           String     @id @default(uuid())
+  microcicloId String
+  microciclo   Microciclo @relation(fields: [microcicloId], references: [id], onDelete: Restrict)
+  numero       Int
+  fecha        DateTime
+  deletedAt    DateTime?
+
+  ejercicios Ejercicio[]
+
+  @@unique([microcicloId, numero])
+  @@index([deletedAt])
+}
+
+model Ejercicio {
+  id                    String              @id @default(uuid())
+  sesionId              String
+  sesion                SesionEntrenamiento @relation(fields: [sesionId], references: [id], onDelete: Restrict)
+  bibliotecaId          String
+  biblioteca            EjercicioBiblioteca @relation(fields: [bibliotecaId], references: [id], onDelete: Restrict)
+  orden                 Int
+  numeroSeries          Int
+  repeticionesSugeridas String
+  descansoSegundos      Int
+  rir                   String?
+  deletedAt             DateTime?
+
+  registros RegistroSerie[]
+
+  @@index([sesionId, orden])
+  @@index([deletedAt])
+}
+
+model RegistroSerie {
+  id            String    @id @default(uuid())
+  ejercicioId   String
+  ejercicio     Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Restrict)
+  numeroSerie   Int
+  carga         Float
+  reps          Int
+  rir           String?
+  observaciones String?
+  deletedAt     DateTime?
+
+  @@unique([ejercicioId, numeroSerie])
+  @@index([deletedAt])
 }
