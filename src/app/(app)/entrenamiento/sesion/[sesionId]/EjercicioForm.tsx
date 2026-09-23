@@ -1,13 +1,15 @@
 // src/app/(app)/entrenamiento/sesion/[sesionId]/EjercicioForm.tsx
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { crearEjercicioAction } from './actions';
+import { ComboboxFiltrable } from '@/components/ComboboxFiltrable';
 
 interface EjercicioBiblioteca {
     id: string;
     nombre: string;
-    categoria: { nombre: string };
+    categoriaId: string;
+    categoria: { id: string; nombre: string };
 }
 
 const inputClass = 'w-full rounded-md border border-[#E8E6DF] px-3 py-2 text-black';
@@ -20,21 +22,37 @@ export function EjercicioForm({
     catalogo: EjercicioBiblioteca[];
 }) {
     const [state, formAction, isPending] = useActionState(crearEjercicioAction, {});
+    const [categoriaId, setCategoriaId] = useState('');
+
+    const categorias = Array.from(
+        new Map(catalogo.map((e) => [e.categoria.id, e.categoria])).values()
+    ).map((c) => ({ id: c.id, etiqueta: c.nombre }));
+
+    const ejerciciosFiltrados = catalogo
+        .filter((e) => !categoriaId || e.categoriaId === categoriaId)
+        .map((e) => ({ id: e.id, etiqueta: e.nombre }));
 
     return (
         <form action={formAction} className="max-w-md space-y-3 rounded-md border border-[#E8E6DF] bg-white p-4">
             <input type="hidden" name="sesionId" value={sesionId} />
 
             <div>
+                <label className="text-sm font-medium text-[#3D3D3A]">Categoría</label>
+                <ComboboxFiltrable
+                    name="categoriaFiltro"
+                    opciones={categorias}
+                    placeholder="Escribe para buscar…"
+                    onSeleccion={setCategoriaId}
+                />
+            </div>
+
+            <div>
                 <label className="text-sm font-medium text-[#3D3D3A]">Ejercicio</label>
-                <select name="bibliotecaId" required className={inputClass}>
-                    <option value="">Selecciona…</option>
-                    {catalogo.map((e) => (
-                        <option key={e.id} value={e.id}>
-                            {e.categoria.nombre} — {e.nombre}
-                        </option>
-                    ))}
-                </select>
+                <ComboboxFiltrable
+                    name="bibliotecaId"
+                    opciones={ejerciciosFiltrados}
+                    placeholder={categoriaId ? 'Escribe para buscar…' : 'Selecciona una categoría primero'}
+                />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
