@@ -1,11 +1,18 @@
 import { z } from 'zod';
 import { AlimentoBibliotecaRepository } from './alimentoBibliotecaRepository';
 
+const textoOpcional = z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().optional()
+);
+
 const crearAlimentoSchema = z.object({
     nombre: z.string().trim().min(1, 'El nombre es obligatorio'),
-    proteinaG100: z.coerce.number().min(0, 'La proteína no puede ser negativa'),
-    carbohidratosG100: z.coerce.number().min(0, 'Los carbohidratos no pueden ser negativos'),
-    grasaG100: z.coerce.number().min(0, 'La grasa no puede ser negativa'),
+    gramosReferencia: z.coerce.number().positive('Debe ser un número positivo'),
+    proteinaGramos: z.coerce.number().min(0, 'La proteína no puede ser negativa'),
+    carbohidratosGramos: z.coerce.number().min(0, 'Los carbohidratos no pueden ser negativos'),
+    grasaGramos: z.coerce.number().min(0, 'La grasa no puede ser negativa'),
+    equivalencia: textoOpcional,
 });
 
 export type CrearAlimentoBibliotecaResult =
@@ -35,7 +42,11 @@ export class AlimentoBibliotecaService {
             return { ok: false, code: 'ALIMENTO_YA_EXISTE' };
         }
 
-        const alimento = await this.repo.crear({ ...parsed.data, entrenadorId });
+        const alimento = await this.repo.crear({
+            ...parsed.data,
+            equivalencia: parsed.data.equivalencia ?? null,
+            entrenadorId,
+        });
         return { ok: true, alimentoBibliotecaId: alimento.id };
     }
 }

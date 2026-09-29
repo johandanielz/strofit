@@ -298,14 +298,16 @@ enum TipoComida {
 }
 
 model AlimentoBiblioteca {
-  id                String     @id @default(uuid())
-  entrenadorId      String
-  entrenador        Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
-  nombre            String
-  proteinaG100      Float
-  carbohidratosG100 Float
-  grasaG100         Float
-  deletedAt         DateTime?
+  id                  String     @id @default(uuid())
+  entrenadorId        String
+  entrenador          Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
+  nombre              String
+  gramosReferencia    Float
+  proteinaGramos      Float
+  carbohidratosGramos Float
+  grasaGramos         Float
+  equivalencia        String?
+  deletedAt           DateTime?
 
   alimentosComida AlimentoComida[]
 

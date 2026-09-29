@@ -4,9 +4,11 @@ import type { AlimentoBiblioteca } from '../../generated/prisma/client';
 export interface DatosCrearAlimentoBiblioteca {
     entrenadorId: string;
     nombre: string;
-    proteinaG100: number;
-    carbohidratosG100: number;
-    grasaG100: number;
+    gramosReferencia: number;
+    proteinaGramos: number;
+    carbohidratosGramos: number;
+    grasaGramos: number;
+    equivalencia: string | null;
 }
 
 export interface AlimentoBibliotecaRepository {

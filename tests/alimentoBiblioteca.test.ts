@@ -1,16 +1,20 @@
 import { AlimentoBibliotecaService } from '../src/lib/nutricion/alimentoBibliotecaService';
 import { AlimentoBibliotecaRepository, DatosCrearAlimentoBiblioteca } from '../src/lib/nutricion/alimentoBibliotecaRepository';
 
+type AlimentoFake = DatosCrearAlimentoBiblioteca & { id: string; deletedAt: null };
+
 function makeFakeAlimentoRepo(
     iniciales: { entrenadorId: string; nombre: string }[] = []
 ) {
-    const alimentos = iniciales.map((a, i) => ({
+    const alimentos: AlimentoFake[] = iniciales.map((a, i) => ({
         id: `alimento-${i + 1}`,
         entrenadorId: a.entrenadorId,
         nombre: a.nombre,
-        proteinaG100: 0,
-        carbohidratosG100: 0,
-        grasaG100: 0,
+        gramosReferencia: 100,
+        proteinaGramos: 0,
+        carbohidratosGramos: 0,
+        grasaGramos: 0,
+        equivalencia: null,
         deletedAt: null,
     }));
 
@@ -35,14 +39,16 @@ function makeFakeAlimentoRepo(
 const ENTRENADOR_ID = 'entrenador-1';
 
 const datosValidos = {
-    nombre: 'Pechuga de pollo',
-    proteinaG100: 31,
-    carbohidratosG100: 0,
-    grasaG100: 3.6,
+    nombre: 'Arepa',
+    gramosReferencia: 50,
+    proteinaGramos: 3,
+    carbohidratosGramos: 32,
+    grasaGramos: 0,
+    equivalencia: '1 unidad',
 };
 
 describe('HU-14: AlimentoBibliotecaService.crear', () => {
-    test('crea un alimento nuevo correctamente', async () => {
+    test('crea un alimento nuevo correctamente, con su cantidad de referencia real', async () => {
         const service = new AlimentoBibliotecaService(makeFakeAlimentoRepo());
 
         const result = await service.crear(datosValidos, ENTRENADOR_ID);
@@ -59,17 +65,35 @@ describe('HU-14: AlimentoBibliotecaService.crear', () => {
         if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
     });
 
-    test('rechaza si algún macro es negativo', async () => {
+    test('rechaza si la cantidad de referencia no es positiva', async () => {
         const service = new AlimentoBibliotecaService(makeFakeAlimentoRepo());
 
-        const result = await service.crear({ ...datosValidos, proteinaG100: -1 }, ENTRENADOR_ID);
+        const result = await service.crear({ ...datosValidos, gramosReferencia: 0 }, ENTRENADOR_ID);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
     });
 
+    test('rechaza si algún macro es negativo', async () => {
+        const service = new AlimentoBibliotecaService(makeFakeAlimentoRepo());
+
+        const result = await service.crear({ ...datosValidos, proteinaGramos: -1 }, ENTRENADOR_ID);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('permite crear un alimento sin equivalencia', async () => {
+        const { equivalencia, ...sinEquivalencia } = datosValidos;
+        const service = new AlimentoBibliotecaService(makeFakeAlimentoRepo());
+
+        const result = await service.crear(sinEquivalencia, ENTRENADOR_ID);
+
+        expect(result.ok).toBe(true);
+    });
+
     test('rechaza si ya existe un alimento con el mismo nombre para ese entrenador (exacto)', async () => {
-        const repo = makeFakeAlimentoRepo([{ entrenadorId: ENTRENADOR_ID, nombre: 'Pechuga de pollo' }]);
+        const repo = makeFakeAlimentoRepo([{ entrenadorId: ENTRENADOR_ID, nombre: 'Arepa' }]);
         const service = new AlimentoBibliotecaService(repo);
 
         const result = await service.crear(datosValidos, ENTRENADOR_ID);
@@ -79,17 +103,17 @@ describe('HU-14: AlimentoBibliotecaService.crear', () => {
     });
 
     test('rechaza si ya existe, sin importar mayúsculas/minúsculas', async () => {
-        const repo = makeFakeAlimentoRepo([{ entrenadorId: ENTRENADOR_ID, nombre: 'Pechuga de pollo' }]);
+        const repo = makeFakeAlimentoRepo([{ entrenadorId: ENTRENADOR_ID, nombre: 'Arepa' }]);
         const service = new AlimentoBibliotecaService(repo);
 
-        const result = await service.crear({ ...datosValidos, nombre: 'PECHUGA DE POLLO' }, ENTRENADOR_ID);
+        const result = await service.crear({ ...datosValidos, nombre: 'AREPA' }, ENTRENADOR_ID);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.code).toBe('ALIMENTO_YA_EXISTE');
     });
 
     test('permite el mismo nombre para un entrenador distinto', async () => {
-        const repo = makeFakeAlimentoRepo([{ entrenadorId: 'otro-entrenador', nombre: 'Pechuga de pollo' }]);
+        const repo = makeFakeAlimentoRepo([{ entrenadorId: 'otro-entrenador', nombre: 'Arepa' }]);
         const service = new AlimentoBibliotecaService(repo);
 
         const result = await service.crear(datosValidos, ENTRENADOR_ID);
