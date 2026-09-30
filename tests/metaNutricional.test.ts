@@ -25,13 +25,13 @@ function makeFakeMetaRepo(
 
 function makeFakeValoracionRepo(datos: ValoracionParaMeta | null): ValoracionRepositoryParaMeta {
     return {
-        async obtenerUltimaValoracion() {
+        async obtenerPrimeraValoracion() {
             return datos;
         },
     };
 }
 
-const datosValoracion: ValoracionParaMeta = { peso: 98.15, porcentajeGrasa: 24.04 };
+const datosValoracion: ValoracionParaMeta = { peso: 98.15, porcentajeGrasa: 24.04, masaLibreGrasa: 74.55 };
 
 const inputBase = {
     clienteId: 'cliente-1',
@@ -40,7 +40,7 @@ const inputBase = {
 };
 
 describe('HU-14: MetaNutricionalService.crear', () => {
-    test('crea la meta tomando el snapshot de la última valoración', async () => {
+    test('crea la meta tomando el snapshot de la primera valoración', async () => {
         const { repo } = makeFakeMetaRepo();
         const service = new MetaNutricionalService(repo, makeFakeValoracionRepo(datosValoracion));
 
@@ -67,6 +67,7 @@ describe('HU-14: MetaNutricionalService.crear', () => {
                 fechaInicio: new Date('2025-01-01'),
                 pesoInicial: 100,
                 porcentajeGrasaInicial: 26,
+                masaMagraInicial: 74,
                 porcentajeGrasaObjetivo: 20,
                 perdidaGrasaSemanalGramos: 300,
                 activa: true,

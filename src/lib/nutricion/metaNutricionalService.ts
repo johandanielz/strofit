@@ -4,10 +4,11 @@ import { MetaNutricionalRepository } from './metaNutricionalRepository';
 export interface ValoracionParaMeta {
     peso: number;
     porcentajeGrasa: number;
+    masaLibreGrasa: number;
 }
 
 export interface ValoracionRepositoryParaMeta {
-    obtenerUltimaValoracion(clienteId: string): Promise<ValoracionParaMeta | null>;
+    obtenerPrimeraValoracion(clienteId: string): Promise<ValoracionParaMeta | null>;
 }
 
 const crearMetaSchema = z.object({
@@ -37,8 +38,8 @@ export class MetaNutricionalService {
             };
         }
 
-        const ultimaValoracion = await this.valoracionRepo.obtenerUltimaValoracion(parsed.data.clienteId);
-        if (!ultimaValoracion) {
+        const primeraValoracion = await this.valoracionRepo.obtenerPrimeraValoracion(parsed.data.clienteId);
+        if (!primeraValoracion) {
             return { ok: false, code: 'CLIENTE_SIN_VALORACION' };
         }
 
@@ -50,8 +51,9 @@ export class MetaNutricionalService {
         const meta = await this.repo.crear({
             clienteId: parsed.data.clienteId,
             fechaInicio: new Date(),
-            pesoInicial: ultimaValoracion.peso,
-            porcentajeGrasaInicial: ultimaValoracion.porcentajeGrasa,
+            pesoInicial: primeraValoracion.peso,
+            porcentajeGrasaInicial: primeraValoracion.porcentajeGrasa,
+            masaMagraInicial: primeraValoracion.masaLibreGrasa,
             porcentajeGrasaObjetivo: parsed.data.porcentajeGrasaObjetivo,
             perdidaGrasaSemanalGramos: parsed.data.perdidaGrasaSemanalGramos,
         });

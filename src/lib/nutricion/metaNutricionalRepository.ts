@@ -6,6 +6,7 @@ export interface DatosCrearMetaNutricional {
     fechaInicio: Date;
     pesoInicial: number;
     porcentajeGrasaInicial: number;
+    masaMagraInicial: number;
     porcentajeGrasaObjetivo: number;
     perdidaGrasaSemanalGramos: number;
 }

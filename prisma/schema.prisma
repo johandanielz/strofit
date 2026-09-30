@@ -322,6 +322,7 @@ model MetaNutricional {
   fechaInicio               DateTime
   pesoInicial               Float
   porcentajeGrasaInicial    Float
+  masaMagraInicial          Float
   porcentajeGrasaObjetivo   Float
   perdidaGrasaSemanalGramos Float
   activa                    Boolean   @default(true)
