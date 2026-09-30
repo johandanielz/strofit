@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { assertClienteDelEntrenador, prismaGuardsRepository, AccesoNoAutorizadoError } from '@/lib/auth/guards';
 import { obtenerEntrenadorIdDeLaSesion } from '@/lib/auth/getEntrenadorId';
 import { formatearFechaUTC } from '@/lib/formatearFechaUTC';
+import { calcularProyeccionNutricional } from '@/lib/nutricion/calculoProyeccionNutricional';
 import { MetaNutricionalForm } from './MetaNutricionalForm';
 import { PlanNutricionalForm } from './PlanNutricionalForm';
 
@@ -25,7 +26,7 @@ export default async function NutricionClientePage({
         throw e;
     }
 
-    const [cliente, valoraciones, metaActiva, planes] = await Promise.all([
+    const [cliente, valoraciones, ultimaValoracion, metaActiva, planes] = await Promise.all([
         prisma.cliente.findUnique({
             where: { id: clienteId },
             select: { user: { select: { nombre: true } } },
@@ -34,6 +35,11 @@ export default async function NutricionClientePage({
             where: { clienteId, deletedAt: null },
             orderBy: { fecha: 'desc' },
             select: { id: true, fecha: true, peso: true },
+        }),
+        prisma.valoracion.findFirst({
+            where: { clienteId, deletedAt: null },
+            orderBy: { fecha: 'desc' },
+            select: { porcentajeGrasa: true },
         }),
         prisma.metaNutricional.findFirst({
             where: { clienteId, activa: true, deletedAt: null },
@@ -50,6 +56,16 @@ export default async function NutricionClientePage({
         label: `${formatearFechaUTC(v.fecha)} — ${v.peso} kg`,
     }));
 
+    const proyeccion = metaActiva
+        ? calcularProyeccionNutricional({
+              pesoInicial: metaActiva.pesoInicial,
+              porcentajeGrasaInicial: metaActiva.porcentajeGrasaInicial,
+              masaMagraInicial: metaActiva.masaMagraInicial,
+              porcentajeGrasaObjetivo: metaActiva.porcentajeGrasaObjetivo,
+              perdidaGrasaSemanalGramos: metaActiva.perdidaGrasaSemanalGramos,
+          })
+        : null;
+
     return (
         <div className="p-8">
             <h1 className="mb-6 text-2xl font-bold text-black">
@@ -59,12 +75,23 @@ export default async function NutricionClientePage({
             <div className="grid gap-8 md:grid-cols-2">
                 <section>
                     <h2 className="mb-3 font-semibold text-black">Meta nutricional</h2>
-                    {metaActiva ? (
-                        <div className="mb-4 rounded-md border border-[#E8E6DF] bg-white p-4 text-sm text-[#3D3D3A]">
+                    {metaActiva && proyeccion ? (
+                        <div className="mb-4 space-y-1 rounded-md border border-[#E8E6DF] bg-white p-4 text-sm text-[#3D3D3A]">
                             <p>Peso inicial: {metaActiva.pesoInicial} kg</p>
                             <p>% Grasa inicial: {metaActiva.porcentajeGrasaInicial.toFixed(2)}%</p>
+                            <p>Masa magra inicial: {metaActiva.masaMagraInicial.toFixed(2)} kg</p>
+                            {ultimaValoracion && (
+                                <p>% Grasa actual: {ultimaValoracion.porcentajeGrasa.toFixed(2)}%</p>
+                            )}
                             <p>% Grasa objetivo: {metaActiva.porcentajeGrasaObjetivo.toFixed(2)}%</p>
                             <p>Pérdida semanal: {metaActiva.perdidaGrasaSemanalGramos} g</p>
+                            <hr className="my-2 border-[#E8E6DF]" />
+                            <p>Peso final proyectado: {proyeccion.pesoFinal.toFixed(2)} kg</p>
+                            <p>Masa magra final proyectada: {proyeccion.masaMagraFinal.toFixed(2)} kg</p>
+                            <p>
+                                Tiempo necesario: {proyeccion.tiempoNecesarioSemanas.toFixed(1)} semanas (
+                                {proyeccion.tiempoNecesarioMeses.toFixed(1)} meses)
+                            </p>
                         </div>
                     ) : (
                         <p className="mb-4 text-sm text-[#3D3D3A]">
