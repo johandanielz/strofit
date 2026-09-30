@@ -44,6 +44,7 @@ model Entrenador {
   deletedAt DateTime?
 
   clientes Cliente[]
+  alimentosBiblioteca AlimentoBiblioteca[]
 
   @@index([deletedAt])
 }
@@ -67,6 +68,8 @@ model Cliente {
   citasAgenda  CitaAgenda[]
   valoraciones Valoracion[]
   macrociclos  Macrociclo[]
+  planesNutricionales PlanNutricional[]
+  metasNutricionales  MetaNutricional[]
 
   @@index([entrenadorId])
   @@index([deletedAt])
@@ -151,6 +154,7 @@ model Valoracion {
   deletedAt DateTime?
 
   fotos FotoValoracion[]
+  planNutricional PlanNutricional?
 
   @@index([clienteId, fecha])
   @@index([deletedAt])
@@ -275,5 +279,108 @@ model RegistroSerie {
   deletedAt     DateTime?
 
   @@unique([ejercicioId, numeroSerie])
+  @@index([deletedAt])
+}
+
+enum ObjetivoNutricional {
+  DEFICIT
+  MANTENIMIENTO
+  SUPERAVIT
+}
+
+enum TipoComida {
+  DESAYUNO
+  MEDIA_MANANA
+  ALMUERZO
+  MERIENDA
+  POST_ENTRENO
+  COMIDA
+}
+
+model AlimentoBiblioteca {
+  id                  String     @id @default(uuid())
+  entrenadorId        String
+  entrenador          Entrenador @relation(fields: [entrenadorId], references: [id], onDelete: Restrict)
+  nombre              String
+  gramosReferencia    Float
+  proteinaGramos      Float
+  carbohidratosGramos Float
+  grasaGramos         Float
+  equivalencia        String?
+  deletedAt           DateTime?
+
+  alimentosComida AlimentoComida[]
+
+  @@index([entrenadorId])
+  @@index([deletedAt])
+}
+
+model MetaNutricional {
+  id                        String    @id @default(uuid())
+  clienteId                 String
+  cliente                   Cliente   @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  fechaInicio               DateTime
+  pesoInicial               Float
+  porcentajeGrasaInicial    Float
+  masaMagraInicial          Float
+  porcentajeGrasaObjetivo   Float
+  perdidaGrasaSemanalGramos Float
+  activa                    Boolean   @default(true)
+  deletedAt                 DateTime?
+
+  @@index([clienteId])
+  @@index([deletedAt])
+}
+
+model PlanNutricional {
+  id                     String              @id @default(uuid())
+  clienteId              String
+  cliente                Cliente             @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  valoracionId           String              @unique
+  valoracion             Valoracion          @relation(fields: [valoracionId], references: [id], onDelete: Restrict)
+  objetivo               ObjetivoNutricional
+  tasaSemanalPeso        Float?
+  proteinaGramosPorKgLBM Float
+  caloriasObjetivo       Float
+  proteinaG              Float
+  carbohidratosG         Float
+  grasasG                Float
+  aguaLitros             Float?
+  pasosObjetivo          Int?
+  cardioMinutosSemanal   Int?
+  notas                  String?
+  deletedAt              DateTime?
+
+  comidas PlanComida[]
+
+  @@index([clienteId])
+  @@index([deletedAt])
+}
+
+model PlanComida {
+  id                String          @id @default(uuid())
+  planNutricionalId String
+  planNutricional   PlanNutricional @relation(fields: [planNutricionalId], references: [id], onDelete: Restrict)
+  tipo              TipoComida
+  orden             Int
+  deletedAt         DateTime?
+
+  alimentos AlimentoComida[]
+
+  @@unique([planNutricionalId, tipo])
+  @@index([deletedAt])
+}
+
+model AlimentoComida {
+  id                   String             @id @default(uuid())
+  planComidaId         String
+  planComida           PlanComida         @relation(fields: [planComidaId], references: [id], onDelete: Restrict)
+  alimentoBibliotecaId String
+  alimentoBiblioteca   AlimentoBiblioteca @relation(fields: [alimentoBibliotecaId], references: [id], onDelete: Restrict)
+  gramos               Float
+  orden                Int
+  deletedAt            DateTime?
+
+  @@index([planComidaId])
   @@index([deletedAt])
 }

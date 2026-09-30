@@ -15,7 +15,7 @@
 | 1      | Autenticación y arquitectura base | 9 (HU-21,22,01,01b,02,02b,02c,02d,03) | 6/9 | 30/30 ✅ | — |
 | 2      | Valoraciones físicas            | 6 (HU-04 a HU-09) | 4/6 completas (HU-06 parcial) | 53/53 | — |
 | 3      | Entrenamiento                   | 4 (HU-10 a HU-13) | 1/4 completa | 33/33 | — |
-| 4      | Nutrición                       | 3 | 0/3 | — | — |
+| 4      | Nutrición                       | 3 | 1/3 (HU-14) | 122/122 ✅ | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
 
 **Última ejecución de la suite completa:** aún no hay suite — se crea en el primer
@@ -568,13 +568,82 @@ con `formatearFechaUTC()`, que lee componentes UTC directamente.
 mismo bloqueo que HU-09, el sistema no tiene flujo real de cliente
 todavía.
 
-## Sprints 4 a 5
+## Sprint 4 — Nutrición
+
+### HU-14 — Creación de plan de alimentación mensual
+
+**Estado:** ✅ Completado — 122/122 pruebas en toda la suite, flujo completo
+verificado en navegador de punta a punta con datos reales, modelado contra
+el Excel real del entrenador (Andrés Castrillón).
+
+**Archivos:**
+- `prisma/schema.prisma` — 5 tablas nuevas (`AlimentoBiblioteca`,
+  `MetaNutricional`, `PlanNutricional`, `PlanComida`, `AlimentoComida`),
+  enum `ObjetivoNutricional`, enum `TipoComida`
+- `src/lib/nutricion/` — repositorios + servicios de
+  `alimentoBiblioteca`, `metaNutricional` (+ `prismaValoracionRepositoryParaMeta`),
+  `planNutricional`, `planComida`, `alimentoComida`
+- `src/lib/nutricion/calculoPlanNutricional.ts` — función pura: calorías
+  objetivo, proteína, carbohidratos y grasas según objetivo/tasa
+  semanal/g de proteína por kg de masa libre de grasa
+- `src/lib/nutricion/calculoProyeccionNutricional.ts` — función pura:
+  peso final, masa magra final, tiempo necesario (semanas/meses)
+- `tests/alimentoBiblioteca.test.ts`, `tests/metaNutricional.test.ts`,
+  `tests/calculoProyeccionNutricional.test.ts`, `tests/planNutricional.test.ts`,
+  `tests/planComida.test.ts`, `tests/alimentoComida.test.ts`
+- `src/app/(app)/nutricion/` — catálogo de alimentos, `[clienteId]`
+  (meta + plan), `plan/[planNutricionalId]` (comidas),
+  `comida/[planComidaId]` (alimentos de la comida)
+- `src/components/ComboboxFiltrable.tsx` — reutilizado (ya existía desde
+  HU-10) para seleccionar alimentos del catálogo
+
+**Decisiones de diseño confirmadas con el entrenador durante la sesión:**
+- `MetaNutricional` toma peso, %grasa y masa magra de la **primera**
+  valoración del cliente, no la última — confirmado contra las fórmulas
+  reales de la hoja `Calendario` del Excel
+- Peso final proyectado, masa magra final y tiempo necesario se calculan
+  al vuelo al renderizar la página (`calcularProyeccionNutricional`), no
+  se almacenan — junto con el %grasa actual, tomado en vivo de la última
+  valoración
+- `AlimentoBiblioteca` usa una cantidad de referencia real por alimento
+  (`gramosReferencia`), no un "por 100g" fijo para todos — corrección de
+  alcance detectada al construir la UI del catálogo, con el Excel real
+  como referencia (huevo=100g, arepa=50g, etc.), más un campo opcional
+  `equivalencia` para medidas caseras
+- `AlimentoBiblioteca` con alcance por entrenador (`entrenadorId`), a
+  diferencia de `EjercicioBiblioteca`/`CategoriaEjercicio` que son
+  globales — inconsistencia consciente, documentada como deuda técnica
+- Guard `assertClienteDelEntrenador` agregado proactivamente a todas las
+  páginas y server actions nuevas de Nutrición (a diferencia del gap ya
+  existente en `registrarValoracionAction` de HU-05)
+
+**Bug encontrado y corregido (detectado por el usuario, no por pruebas):**
+la primera versión de `MetaNutricional` tomaba `pesoInicial` y
+`porcentajeGrasaInicial` de la **última** valoración del cliente en vez de
+la primera, y no calculaba ni almacenaba `masaMagraInicial`, %grasa actual,
+peso final proyectado, masa magra final ni tiempo necesario — todos
+presentes en el Excel real. Corregido con una migración
+(`agregar_masa_magra_inicial`), el renombrado
+`obtenerUltimaValoracion` → `obtenerPrimeraValoracion`
+(`orderBy: { fecha: 'asc' }`), y la nueva función pura
+`calcularProyeccionNutricional`, verificada contra los números reales del
+Excel (peso final ≈93.19kg, ≈16.52 semanas ≈4.13 meses). La fórmula de
+masa magra final usa el `%grasa objetivo` real confirmado con el
+entrenador (un valor que parecía una constante fija en el Excel resultó
+ser un residuo de una versión anterior, no intencional).
+
+**Pendiente:**
+- Alinear `AlimentoBiblioteca` con `EjercicioBiblioteca`/`CategoriaEjercicio`
+  respecto al alcance por entrenador
+- Cerrar el gap de autorización de `registrarValoracionAction` (HU-05)
+- Confirmar con el entrenador la partición grasa/masa magra para
+  `SUPERAVIT` (hoy usa la misma proporción que `DEFICIT`, sin validar)
+
+## Sprint 4 (restante) y Sprint 5
 
 No iniciados. Se documentarán con el mismo formato (archivos, tabla de pruebas por
 criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden de
 `5.1. Definición de Sprint Goal` del documento principal:
 
-- **Sprint 2 — Valoraciones físicas:** HU-04, HU-05, HU-06, HU-07, HU-08, HU-09.
-- **Sprint 3 — Entrenamiento:** HU-10, HU-11, HU-12, HU-13.
-- **Sprint 4 — Nutrición:** HU-14, HU-15, HU-16.
+- **Sprint 4 — Nutrición (restante):** HU-15, HU-16.
 - **Sprint 5 — Notificaciones:** HU-17, HU-18, HU-19, HU-20.
