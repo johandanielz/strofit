@@ -40,7 +40,7 @@
 | HU-11  | Visualización del entrenamiento (cliente)              | Must   | 3      | No iniciado    |
 | HU-12  | Registro de series ejecutadas                          | Should | 3      | No iniciado    |
 | HU-13  | Video de referencia del ejercicio                      | Could  | 3      | No iniciado    |
-| HU-14  | Creación de plan de alimentación mensual               | Must   | 4      | No iniciado    |
+| HU-14  | Creación de plan de alimentación mensual               | Must   | 4      | Completado     |
 | HU-15  | Visualización del plan alimenticio + lista de compras  | Must   | 4      | No iniciado    |
 | HU-16  | Informe de planes alimenticios                         | Should | 4      | No iniciado    |
 | HU-17  | Notificación: valoración agendada                      | Could  | 5      | No iniciado    |
@@ -488,7 +488,105 @@ es un reporte calculado, se puede construir después sin afectar el resto.
 
 ---
 
-## HU-11 a HU-20
+## HU-14 — Creación de plan de alimentación mensual
+
+> **Modelo confirmado con el entrenador (revisando su Excel real de Andrés
+> Castrillón):** la meta nutricional (`MetaNutricional`) toma el peso, %grasa
+> y masa magra de la **primera** valoración del cliente (no la última) —
+> confirmado contra las fórmulas reales de la hoja `Calendario`
+> (`PESO INICIAL = Pesos!B4`, la primera columna del historial). El plan
+> nutricional (`PlanNutricional`) reutiliza el objetivo (déficit/mantenimiento/
+> superávit), la tasa semanal de cambio de peso y el gramaje de proteína por
+> kg de masa libre de grasa, calculando calorías/proteína/carbohidratos/grasas
+> con la misma fórmula que la hoja `Alimentación` del Excel real.
+
+> **Catálogo de alimentos con cantidad de referencia real (corrección de
+> alcance durante la sesión):** el diseño inicial de `AlimentoBiblioteca`
+> asumía que los macros de cada alimento estaban expresados "por 100g", igual
+> para todos. Al construir la UI del catálogo, se detectó que el Excel real
+> usa una cantidad de referencia distinta por alimento (huevo=100g,
+> arepa=50g, cuajada=140g, arroz=65g), y además incluye un campo "Equivale"
+> (medida casera opcional, ej. "1 unidad"). Se corrigió el modelo:
+> `proteinaGramos`/`carbohidratosGramos`/`grasaGramos` ahora son relativos a
+> un nuevo campo obligatorio `gramosReferencia` (no fijo en 100), y se agregó
+> `equivalencia: String?`. Requirió una migración adicional
+> (`renombrar_macros_alimento`) y borrar los datos de prueba existentes.
+
+> **Proyección de tendencia calculada al vuelo, no almacenada (decisión
+> confirmada con el usuario):** la hoja `Calendario` del Excel guarda una
+> tabla semana-por-semana con la proyección de peso/%grasa. Se decide **no**
+> replicar esa tabla como modelo — en su lugar, `MetaNutricional` guarda solo
+> los datos base (peso inicial, %grasa inicial, masa magra inicial, %grasa
+> objetivo, pérdida semanal) y una función pura
+> (`calcularProyeccionNutricional`) calcula peso final, masa magra final y
+> tiempo necesario (semanas/meses) en el momento de renderizar la página —
+> verificada contra los números reales del Excel de Andrés Castrillón (peso
+> final 93.19kg, 16.52 semanas ≈ 4.13 meses). La fórmula de masa magra final
+> usa el `%grasa objetivo` real (confirmado con el entrenador — el Excel
+> tenía un valor fijo en esa celda que resultó ser un residuo de una versión
+> anterior, no una constante intencional).
+
+> **`AlimentoBiblioteca` con alcance por entrenador, a diferencia de
+> `EjercicioBiblioteca`/`CategoriaEjercicio` (decisión consciente, no
+> descuido):** los catálogos de Entrenamiento son globales (sin
+> `entrenadorId`), pero el catálogo de alimentos sí lo tiene. Se decide
+> mantener la inconsistencia por ahora y no alinear los tres catálogos en
+> esta sesión — queda documentada como deuda técnica (ver abajo).
+
+> **Guard de autorización agregado proactivamente (a diferencia de
+> Valoración):** se detectó que `registrarValoracionAction` (HU-05) no llama
+> a `assertClienteDelEntrenador` — gap de autorización no resuelto en esta
+> sesión (ver deuda técnica). Para las acciones nuevas de Nutrición, se
+> decide agregar el guard desde el inicio, tanto a nivel de página como de
+> server action (las actions pueden invocarse directamente, sin pasar por
+> la página).
+
+**Criterios de aceptación:**
+1. Given que el entrenador quiere registrar un alimento reutilizable, When
+   ingresa nombre, cantidad de referencia, proteína/carbohidratos/grasa en
+   esa cantidad y opcionalmente una medida casera, Then el sistema lo guarda
+   en su catálogo (`AlimentoBiblioteca`), rechazando nombres duplicados
+   (case-insensitive) para ese mismo entrenador.
+2. Given que un cliente tiene al menos una valoración registrada, When el
+   entrenador define una meta nutricional (%grasa objetivo, pérdida de grasa
+   semanal), Then el sistema calcula automáticamente el peso inicial, %grasa
+   inicial y masa magra inicial desde la primera valoración del cliente, y
+   desactiva cualquier meta activa anterior.
+3. Given que existe una meta activa, When se consulta la página del cliente,
+   Then el sistema muestra, calculados al vuelo, el peso final proyectado,
+   la masa magra final y el tiempo necesario (semanas y meses), además del
+   %grasa actual tomado en vivo de la última valoración.
+4. Given una valoración del cliente, When el entrenador crea un plan
+   nutricional (objetivo, tasa semanal si no es mantenimiento, proteína
+   g/kg LBM, agua, pasos, cardio, notas), Then el sistema calcula calorías
+   objetivo, proteína, carbohidratos y grasas en gramos, rechazando un
+   segundo plan para la misma valoración.
+5. Given un plan nutricional, When el entrenador agrega comidas (tipo +
+   orden), Then el sistema rechaza un tipo de comida repetido dentro del
+   mismo plan.
+6. Given una comida del plan, When el entrenador agrega alimentos del
+   catálogo con sus gramos, Then el sistema calcula los macros escalados
+   según la cantidad de referencia real de cada alimento.
+
+**Estado:** ✅ Completado — flujo completo verificado en navegador con datos
+reales del Excel de Andrés Castrillón: catálogo de alimentos, meta
+nutricional (con proyección), plan nutricional, comidas y alimentos de cada
+comida, todos encadenados. 122/122 pruebas en toda la suite.
+
+**Deuda técnica documentada (no resuelta en esta sesión):**
+- Alinear `AlimentoBiblioteca` con `EjercicioBiblioteca`/`CategoriaEjercicio`
+  respecto al alcance por entrenador (hoy son inconsistentes).
+- Cerrar el gap de autorización de `registrarValoracionAction` (HU-05), que
+  no usa `assertClienteDelEntrenador` a diferencia de las acciones nuevas de
+  Nutrición.
+- Confirmar con el entrenador la partición grasa/masa magra para
+  `SUPERAVIT` — hoy usa la misma proporción 71.3%/28.7% que `DEFICIT` (dato
+  real del Excel), como aproximación pendiente de validar para fases de
+  ganancia.
+
+---
+
+## HU-11, HU-12, HU-13, HU-15 a HU-20
 
 Sin cambios de contenido respecto al documento principal
 (`Documentación_Proyecto_Integrador_II`, sección 3.2), salvo la corrección ya aplicada
@@ -498,4 +596,6 @@ completo de los criterios Given/When/Then de cada una — no se duplican aquí p
 evitar que este archivo y el documento fuente diverjan.
 
 **Estado de todas:** ⬜ No iniciado (planificadas para Sprints 2 a 5, según
-`5.2. Sprint BackLog con tareas` del documento principal).
+`5.2. Sprint BackLog con tareas` del documento principal). HU-11/HU-12
+(vista del cliente, registro de series) y HU-14 (Nutrición) son las
+excepciones ya cubiertas en sus propias secciones arriba.
