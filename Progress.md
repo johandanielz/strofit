@@ -17,6 +17,7 @@
 | 3      | Entrenamiento                   | 4 (HU-10 a HU-13) | 1/4 completa | 33/33 | — |
 | 4      | Nutrición                       | 3 | 1/3 (HU-14) | 122/122 ✅ | — |
 | 5      | Notificaciones                  | 4 | 0/4 | — | — |
+| —      | Técnico (HU-23, menú de navegación) | 1 | 1/1 | 122/122 ✅ | — |
 
 **Última ejecución de la suite completa:** aún no hay suite — se crea en el primer
 paso de la sesión de implementación.
@@ -647,3 +648,39 @@ criterio, decisiones de diseño) a medida que se implementen, siguiendo el orden
 
 - **Sprint 4 — Nutrición (restante):** HU-15, HU-16.
 - **Sprint 5 — Notificaciones:** HU-17, HU-18, HU-19, HU-20.
+
+---
+
+## Técnico — HU-23 — Menú de navegación del entrenador
+
+**Estado:** ✅ Completado — verificado en navegador, 122/122 pruebas en toda
+la suite (sin pruebas nuevas: componentes de presentación sin lógica de
+negocio, mismo criterio que `LogoutButton` en HU-01b).
+
+**Archivos:**
+- `src/app/(app)/NavMenu.tsx` — nuevo, enlaces verticales a Dashboard,
+  Agenda, Clientes, Valoraciones, Entrenamiento (catálogo) y Nutrición
+  (catálogo)
+- `src/app/(app)/LogoutButton.tsx` — extendido con prop `oscuro` para
+  verse bien sobre el sidebar negro
+- `src/app/(app)/layout.tsx` — reestructurado en dos ramas: sidebar negro
+  con logo + `NavMenu` + `LogoutButton` para `rol === 'ENTRENADOR'`, header
+  simple sin cambios para el cliente
+- `src/app/(app)/clientes/lista/ListaFiltro.tsx` — cada cliente pasa de
+  tener un solo enlace (Historial) a tres (Historial / Entrenamiento /
+  Nutrición)
+
+**Decisiones de diseño:**
+- Primera versión fue un header horizontal; se cambió a sidebar vertical
+  a pedido del usuario, reutilizando el logo (`/logo.png`) ya usado en
+  `/login`
+- El layout se separó en dos ramas completas (entrenador / cliente) en
+  vez de mezclar clases condicionales en un solo bloque — más legible, ya
+  que el sidebar oscuro y el header claro no comparten casi nada de
+  estructura
+- El menú no incluye las páginas por cliente (macrociclos, plan
+  nutricional) porque requieren un `clienteId` — se llega a ellas desde
+  la lista de clientes, no desde el menú principal
+
+**Rama:** `feature/HU-23-menu-navegacion` (no estaba en el documento
+principal del proyecto — HU técnica nueva, surgida al cerrar HU-14).
