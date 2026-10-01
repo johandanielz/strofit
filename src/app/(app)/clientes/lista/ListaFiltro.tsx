@@ -30,13 +30,31 @@ export function ListaFiltro({ clientes }: { clientes: Cliente[] }) {
             ) : (
                 <ul className="space-y-2">
                     {filtrados.map((cliente) => (
-                        <li key={cliente.id}>
-                            <Link
-                                href={`/clientes/${cliente.id}/historial`}
-                                className="block rounded-md border border-[#E8E6DF] bg-white px-4 py-3 font-medium text-black hover:bg-[#f5f5f0]"
-                            >
-                                {cliente.user.nombre}
-                            </Link>
+                        <li
+                            key={cliente.id}
+                            className="rounded-md border border-[#E8E6DF] bg-white px-4 py-3"
+                        >
+                            <p className="mb-2 font-medium text-black">{cliente.user.nombre}</p>
+                            <div className="flex flex-wrap gap-3 text-sm font-medium">
+                                <Link
+                                    href={`/clientes/${cliente.id}/historial`}
+                                    className="text-[#3D3D3A] hover:text-black"
+                                >
+                                    Historial
+                                </Link>
+                                <Link
+                                    href={`/entrenamiento/${cliente.id}`}
+                                    className="text-[#3D3D3A] hover:text-black"
+                                >
+                                    Entrenamiento
+                                </Link>
+                                <Link
+                                    href={`/nutricion/${cliente.id}`}
+                                    className="text-[#3D3D3A] hover:text-black"
+                                >
+                                    Nutrición
+                                </Link>
+                            </div>
                         </li>
                     ))}
                 </ul>
