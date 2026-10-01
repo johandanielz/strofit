@@ -47,6 +47,7 @@
 | HU-18  | Notificación: valoración realizada                     | Could  | 5      | No iniciado    |
 | HU-19  | Notificación: plan de entrenamiento asignado           | Could  | 5      | No iniciado    |
 | HU-20  | Notificación: guía alimenticia creada                  | Could  | 5      | No iniciado    |
+| HU-23  | Menú de navegación del entrenador                      | Must   | —      | Completado     |
 
 ---
 
@@ -599,3 +600,48 @@ evitar que este archivo y el documento fuente diverjan.
 `5.2. Sprint BackLog con tareas` del documento principal). HU-11/HU-12
 (vista del cliente, registro de series) y HU-14 (Nutrición) son las
 excepciones ya cubiertas en sus propias secciones arriba.
+
+---
+
+## HU-23 — Menú de navegación del entrenador *(nueva, técnica)*
+
+**Como** entrenador, **quiero** un menú con acceso directo a todas las
+secciones del sistema **para** no tener que recordar o escribir a mano la
+URL de cada módulo (agenda, clientes, valoraciones, entrenamiento,
+nutrición).
+
+**Origen:** no estaba en el documento principal — surgió al terminar HU-14
+(Nutrición), al notar que cada módulo construido hasta ahora (Agenda,
+Valoraciones, Entrenamiento, Nutrición) solo era alcanzable escribiendo la
+URL directamente, sin ningún enlace de navegación entre ellos.
+
+> **Sidebar con alcance por rol:** el layout `(app)` es compartido por
+> entrenador y cliente. El sidebar (fondo negro, logo de la marca, enlaces
+> verticales, "Cerrar sesión" al fondo) solo se muestra cuando
+> `user.user_metadata.rol === 'ENTRENADOR'` — el cliente conserva el header
+> simple existente, ya que su flujo de navegación (`/mi-progreso`) todavía
+> no está construido.
+
+> **Enlaces solo a secciones sin dependencia de un cliente puntual:** el
+> menú enlaza a `/dashboard`, `/agenda`, `/clientes/lista`,
+> `/valoraciones` y a los catálogos de `/entrenamiento` y `/nutricion`. Las
+> páginas por cliente (macrociclos, meta/plan nutricional, historial) no
+> están en el menú porque requieren un `clienteId` — se acceden desde la
+> lista de clientes, que se extendió para mostrar 3 enlaces por cliente
+> (Historial / Entrenamiento / Nutrición) en vez de solo Historial.
+
+**Criterios de aceptación:**
+1. Given que el entrenador inicia sesión, When llega a cualquier página
+   bajo `(app)`, Then ve un sidebar con enlaces a Dashboard, Agenda,
+   Clientes, Valoraciones, Entrenamiento y Nutrición.
+2. Given que el usuario autenticado es un cliente, When llega a cualquier
+   página bajo `(app)`, Then no ve el sidebar del entrenador (mismo header
+   simple de antes).
+3. Given la lista de clientes, When el entrenador ve un cliente en la
+   lista, Then puede entrar directamente a su Historial, su Entrenamiento
+   o su Nutrición sin escribir la URL a mano.
+
+**Estado:** ✅ Completado — verificado en navegador, 122/122 pruebas en
+toda la suite (no se agregaron pruebas nuevas: son componentes de
+presentación sin lógica de negocio propia, mismo criterio aplicado a
+`LogoutButton` en HU-01b).
